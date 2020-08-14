@@ -1,6 +1,6 @@
-jb
 .env
 .idea
 .gobuild
-cache
+./cache
 todo
+jbuilder

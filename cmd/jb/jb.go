@@ -1,6 +1,7 @@
 package jb
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -277,7 +278,10 @@ func req(env Env, path string, body []byte) (int, []byte, map[string][]string, e
 	}
 
 	url := base_url + path
-	client := &http.Client{}
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr}
 	request, err := http.NewRequest("POST", url, strings.NewReader(string(body)))
 	if err != nil {
 		return 0, nil, nil, err

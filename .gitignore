@@ -1,0 +1,6 @@
+jb
+.env
+.idea
+.gobuild
+cache
+todo

@@ -3,7 +3,6 @@ package jb
 import (
 	"crypto/tls"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
@@ -29,9 +28,15 @@ func init() {
 	homeDir, _ = os.UserHomeDir()
 	homeDir = homeDir + "/.jb/"
 	initConfig()
-	for _, env := range config.Envs {
-		initBundle(env)
+}
+
+func Init(envName string) Env {
+	err, env := GetEnv(envName)
+	if err != nil {
+		panic(err)
 	}
+	initBundle(env)
+	return env
 
 }
 
@@ -46,6 +51,7 @@ func (t EType) String() string {
 }
 
 type Config struct {
+	Use  EName `yaml:"use"`
 	Envs []Env `yaml:"envs"`
 }
 
@@ -232,10 +238,12 @@ func initBundle(env Env) {
 func fetchBundle(env Env) {
 	code, rspbin, _, err := req(env, "api/json", []byte{})
 	if err != nil {
-		log.Fatal(err)
+		fmt.Printf("error: %s\n", err)
+		return
 	}
 	if code != 200 {
-		panic(errors.New("failed to get job details:code " + strconv.Itoa(code) + " " + env.Login + " " + env.Secret))
+		fmt.Println("failed to get job details:code " + strconv.Itoa(code) + " " + env.Login)
+		return
 	}
 	var rsp struct {
 		Views []View `json:"views"`

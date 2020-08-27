@@ -5,6 +5,7 @@ import (
 )
 
 func main() {
+
 	//s:="привет"s
 	//fmt.Println(string([]rune(s)[:3]))
 	//s:="جا"
@@ -13,7 +14,6 @@ func main() {
 	//fmt.Println(len(s1))
 	//cmd.InitView()
 	//fmt.Println("eee")
-	//os.Exit(1)
 	cmd.Execute()
 	//time.Sleep(time.Second)
 	//n := 20

@@ -17,6 +17,7 @@ require (
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
 	github.com/julienroland/keyboard-termbox v0.0.0-20170507181043-8367444ed68b // indirect
 	github.com/kr/text v0.2.0 // indirect
+	github.com/magiconair/properties v1.8.1
 	github.com/mattn/go-isatty v0.0.12 // indirect
 	github.com/mattn/go-tty v0.0.3 // indirect
 	github.com/micmonay/keybd_event v1.1.0 // indirect
@@ -32,7 +33,7 @@ require (
 	github.com/spf13/cast v1.3.1 // indirect
 	github.com/spf13/cobra v1.0.1-0.20200629195214-2c5a0d300f8b
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.7.0 // indirect
 	github.com/stretchr/testify v1.6.1
 	github.com/superhawk610/terminal v0.0.0-20200123193603-cbc69427a94a // indirect

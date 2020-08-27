@@ -17,7 +17,7 @@ import (
 	"time"
 )
 
-var usageTamplate =`Usage:{{if .Runnable}}
+var usageTamplate = `Usage:{{if .Runnable}}
   {{.UseLine}}{{end}}{{if .HasAvailableSubCommands}}
   {{.CommandPath}} [command]{{end}}{{if gt (len .Aliases) 0}}
 
@@ -44,107 +44,150 @@ Use "{{.CommandPath}} [command] --help" for more information about a command.{{e
 
 var listenerStatus bool
 
-type st struct{
-	name string
-	id int
+type st struct {
+	name  string
+	id    int
 	queue int
 }
+
 var curSt st
 var barMutex sync.Mutex
 var closeCh chan struct{}
 var stdinListener *jbStdin
 
-func init(){
+func init() {
 	var runCmd = &cobra.Command{
-		Use:   "run ENV VIEW JOB",
-		Aliases: []string{"jbStdinListener"},
-		Short: "Run the specified jenkins job",
+		Use:     "run JOB",
+		Aliases: []string{"r"},
+		Short:   "Run the specified jenkins job",
 		Run: func(cmd *cobra.Command, args []string) {
-			run_job(args[0], args[1])
+			run_job(args[0])
 		},
 
-		SilenceUsage: false,
+		Args: cobra.ExactArgs(1),
 
+		SilenceUsage: false,
 	}
+	runCmd.Flags().StringVarP(&ENV, "env", "e", "", "Current environment")
 	runCmd.SetUsageTemplate(usageTamplate)
 	rootCmd.AddCommand(runCmd)
 }
 
-func run_job(envName,name string) {
-	var env jb.Env
-	for _, e:=range jb.GetEnvs(){
-		if e.Name==jb.EName(envName){
-			env = e
-			break
-		}
-	}
-	if env == (jb.Env{}){
-		panic("failed to find environment "+envName)
-	}
+func run_job(name string) {
+	env := jb.Init(ENV)
+	fmt.Printf("Job will be started in %s environment\n", env.Name)
+	fmt.Println(env.Url + "/job/" + name)
 
 	bar.InitTerminal()
 	data := map[string]string{}
-	jobInfo:=jb.GetJobInfo(env,name )
-	params:=jobInfo.GetParameterDefinitions()
+	jobInfo := jb.GetJobInfo(env, name)
+	params := jobInfo.GetParameterDefinitions()
 	for _, pd := range params {
-		rl, err := readline.New(pd.Name+": ")
-		if err != nil {
-			panic(err)
+		cline := ""
+		defVal := pd.DefaultParameterValue.Value
+		curChoices := pd.Choices
+		for {
+			rl, err := readline.New(chalk.Underline.TextStyle(pd.Name) + ": ")
+			if err != nil {
+				panic(err)
+			}
+			defer rl.Close()
+			line, err := rl.ReadlineWithDefault(defVal)
+
+			if err != nil { // io.EOF
+				os.Exit(1)
+			}
+			if pd.Type == "ChoiceParameterDefinition" {
+
+				for _, val := range pd.Choices {
+					if line == val {
+						cline = val
+						break
+					}
+				}
+				if cline == "" {
+					curChoices = findBestChoices(line, pd.Choices)
+					if len(curChoices) == 0 {
+						curChoices = pd.Choices
+					} else if len(curChoices) == 1 {
+						defVal = curChoices[0]
+					} else {
+						defVal = line
+					}
+					for _, val := range curChoices {
+						fmt.Printf("%s\t", val)
+					}
+					if len(curChoices) > 0 {
+						fmt.Println()
+					}
+
+					continue
+				}
+			} else {
+				cline = line
+			}
+			break
 		}
-		defer rl.Close()
-		line, err := rl.Readline()
-		if err != nil { // io.EOF
-			os.Exit(1)
-		}
-		data[pd.Name] = line
+
+		data[pd.Name] = cline
 	}
 
 	urlquery := url.Values{}
 	for key, val := range data {
 		urlquery.Add(key, val)
 	}
-	queueId:=jb.Build(env, name, urlquery.Encode())
+	queueId := jb.Build(env, name, urlquery.Encode())
 
 	keyCh := make(chan string)
 	stdinListener = NewStdin()
 	go listenKeys(keyCh)
 	go listenInterrupt(env)
-	queueId1,_ := strconv.Atoi(queueId)
+	queueId1, _ := strconv.Atoi(queueId)
 	curSt.queue = queueId1
 	curSt.name = name
-	number := waitForExecutor(env,queueId1)
+	number := waitForExecutor(env, queueId1)
 	curSt.id = number
-	watchTheJob(env, name, number,keyCh)
+	err := watchTheJob(env, name, number, keyCh)
+	if err != nil {
+		return
+	}
 	curSt = st{}
-	for _,jChild:=  range jobInfo.DownstreamProjects{
-		watchNext(env,name,jChild.Name,number,keyCh)
+	for _, jChild := range jobInfo.DownstreamProjects {
+		err = watchNext(env, name, jChild.Name, number, keyCh)
+		if err != nil {
+			return
+		}
 		curSt = st{}
 	}
 	fmt.Println(chalk.Green.Color("done"))
 	return
 }
 
-func waitForExecutor(env jb.Env,queueId int) int{
-	informed:=false
-	for{
-		err, queueInfo := jb.GetQueueInfo(env,queueId)
-		if err!=nil{
+func waitForExecutor(env jb.Env, queueId int) int {
+	informed := false
+	for {
+		err, queueInfo := jb.GetQueueInfo(env, queueId)
+		if err != nil {
 			panic(err)
 		}
-		if !queueInfo.Blocked&&queueInfo.Executable.URL!=""{
+		if !queueInfo.Blocked && queueInfo.Executable.URL != "" {
 			return queueInfo.Executable.Number
-		}else{
-			if !informed{
+		} else {
+			if !informed {
 				//clearer := strings.Repeat(" ", int(110)-1)
 				fmt.Println("waiting for next available executor..  ")
 				informed = true
 			}
-			time.Sleep(100*time.Millisecond)
+			time.Sleep(100 * time.Millisecond)
 		}
 	}
 }
 
-func barHandler(jobUrl string, keyCh chan string, chMsg chan string, finishCh chan struct{err error; result string}){
+func barHandler(jobUrl string, keyCh chan string, chMsg chan string, finishCh chan struct {
+	err    error
+	result string
+}, wg *sync.WaitGroup) {
+	defer wg.Done()
 	barMutex.Lock()
 	fmt.Print("\033[F")
 	br := bar.NewWithOpts(
@@ -159,7 +202,7 @@ func barHandler(jobUrl string, keyCh chan string, chMsg chan string, finishCh ch
 				chalk.Reset)))
 	br.Tick()
 	barMutex.Unlock()
-	for{
+	for {
 		select {
 		case stdin, _ := <-keyCh:
 			if []byte(stdin)[0] == 10 {
@@ -167,58 +210,56 @@ func barHandler(jobUrl string, keyCh chan string, chMsg chan string, finishCh ch
 				br.SetLines(br.GetLines() + 1)
 				barMutex.Unlock()
 			}
-		case msg:=<-chMsg:
+		case msg := <-chMsg:
 
-				if msg!=""{
-					barMutex.Lock()
-					br.Interrupt(msg)
-					barMutex.Unlock()
-				}else{
-					barMutex.Lock()
-					br.Tick()
-					barMutex.Unlock()
-				}
+			if msg != "" {
+				barMutex.Lock()
+				br.Interrupt(msg)
+				barMutex.Unlock()
+			} else {
+				barMutex.Lock()
+				br.Tick()
+				barMutex.Unlock()
+			}
 
-
-		case info:=<-finishCh:
-			if info.err!=nil&&br.GetLines()<2 {
+		case info := <-finishCh:
+			if info.err != nil && br.GetLines() < 5 {
 				for {
-					if br.GetLines()<10{
+					if br.GetLines() < 10 {
 						barMutex.Lock()
-						br.SetLines(br.GetLines()+1)
+						br.SetLines(br.GetLines() + 1)
 						barMutex.Unlock()
-					}else{
+					} else {
 						break
 					}
 				}
 
 			}
-			fmt.Printf("\r%s", strings.Repeat(" ", int(50)-1))
-			fmt.Print("\033[F")
+			if info.err == nil {
+				fmt.Printf("\r%s", strings.Repeat(" ", int(50)-1))
+				fmt.Print("\033[F")
+			}
+
 			barMutex.Lock()
-			br.SetFormat(fmt.Sprintf(jobUrl+": "+info.result))
+			br.SetFormat(fmt.Sprintf(jobUrl + ": " + info.result))
 			br.Done()
 			barMutex.Unlock()
-			if info.err!=nil{
+			if info.err != nil {
 				fmt.Println(chalk.Red.Color("failed"))
-				os.Exit(1)
 			}
 			return
 		case <-closeCh:
 			return
 		}
 
-
 	}
 }
 
-func watchTheJob(env jb.Env,name string, number int, keyCh chan string){
-
-	jobUrl := env.Url+"/job/"+name+"/"+strconv.Itoa(number)+"/console"
-	lastBuild, _ := jb.GetLastSuccessfulBuildInfo(env,name)
-
-	listenerStatus =  true
-	defer func(){
+func watchTheJob(env jb.Env, name string, number int, keyCh chan string) error {
+	jobUrl := env.Url + "/job/" + name + "/" + strconv.Itoa(number) + "/console"
+	lastBuild, _ := jb.GetLastSuccessfulBuildInfo(env, name)
+	listenerStatus = true
+	defer func() {
 		listenerStatus = false
 	}()
 	ticks := 1
@@ -226,18 +267,25 @@ func watchTheJob(env jb.Env,name string, number int, keyCh chan string){
 	cursor := "0"
 	stime := getTime()
 	chMsg := make(chan string)
-	closeCh = make (chan struct{})
-	finishCh:=make(chan struct{err error; result string})
-	go barHandler(jobUrl, keyCh, chMsg, finishCh)
+	closeCh = make(chan struct{})
+	finishCh := make(chan struct {
+		err    error
+		result string
+	})
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go barHandler(jobUrl, keyCh, chMsg, finishCh, &wg)
 	defer close(closeCh)
-	handle:=func (cursor string) string{
-		output, nextCursor, err := jb.Console(env,name, number, cursor)
-		if err!=nil||cursor == nextCursor{
+	defer wg.Wait()
+	handle := func(cursor string) string {
+		output, nextCursor, err := jb.Console(env, name, number, cursor)
+		if err != nil || cursor == nextCursor {
 			return cursor
 		}
 		j := 1
 		for {
 			lines := strings.Split(output, "\n")
+
 			count := len(lines)
 			if count > 50 {
 				count = 50
@@ -247,24 +295,24 @@ func watchTheJob(env jb.Env,name string, number int, keyCh chan string){
 				if err != nil { // io.EOF
 					break
 				}
-				j:=0
-				size:=100
+				j := 0
+				size := 100
 				for {
 					var fline string
-					s:=j*size
-					e:=(j+1)*size
+					s := j * size
+					e := (j + 1) * size
 					if len(rline) > e {
 						fline = string(rline[s:e])
-					}else{
+					} else {
 						fline = string(rline[s:len(rline)])
 					}
-					if len(strings.TrimSpace(fline))>0{
-						chMsg<-fline
+					if len(strings.TrimSpace(fline)) > 0 {
+						chMsg <- fline
 						time.After(40 * time.Millisecond)
 
 					}
 					j++
-					if len(rline) <= e ||len(rline)>10*size {
+					if len(rline) <= e || len(rline) > 10*size {
 						break
 					}
 				}
@@ -275,45 +323,54 @@ func watchTheJob(env jb.Env,name string, number int, keyCh chan string){
 		}
 		return nextCursor
 	}
-
-
 	for t > -1 {
 
 		if t%5 == 0 && t > 1 {
-			curBuild, err := jb.GetBuildInfo(env,name, number)
+			curBuild, err := jb.GetBuildInfo(env, name, number)
 			if err != nil {
 				if getTime()-stime > int64(30*time.Millisecond) {
-					finishCh <-struct{err error; result string}{errors.New("failed"),err.Error()}
-					return
+					err := errors.New("failed")
+					finishCh <- struct {
+						err    error
+						result string
+					}{err, err.Error()}
+					return err
 				}
 			} else {
 				if !curBuild.Building {
 					if curBuild.Result == "SUCCESS" {
 						for {
-							nc:=handle(cursor)
-							if nc==cursor{
+							nc := handle(cursor)
+							if nc == cursor {
 								break
 							}
 							cursor = nc
 						}
-						finishCh <-struct{err error; result string}{nil,curBuild.Result}
-						return
+						finishCh <- struct {
+							err    error
+							result string
+						}{nil, curBuild.Result}
+						return nil
 					} else {
-						finishCh <-struct{err error; result string}{errors.New("failed"),curBuild.Result}
-						return
+						err := errors.New("failed")
+						finishCh <- struct {
+							err    error
+							result string
+						}{err, curBuild.Result}
+						return err
 					}
 				}
 			}
 		}
 
 		ncursor := handle(cursor)
-		if ncursor!=cursor {
+		if ncursor != cursor {
 			cursor = ncursor
 			ctime := getTime()
 			dtime := ctime - stime
 			newTicks := int(float64(dtime) / float64(lastBuild.Duration) * 100)
 			for ticks < newTicks && ticks < 99 {
-				chMsg<-""
+				chMsg <- ""
 				ticks++
 			}
 			if dtime < 500 {
@@ -324,48 +381,50 @@ func watchTheJob(env jb.Env,name string, number int, keyCh chan string){
 		}
 		t++
 	}
-	finishCh <-struct{err error; result string}{errors.New("failed"),"timeout"}
-	return
+	err := errors.New("failed")
+	finishCh <- struct {
+		err    error
+		result string
+	}{err, "timeout"}
+	return err
 }
 
-func watchNext(env jb.Env,parentName string,childName string,parentJobID int, keyCh chan string){
-	for i:=0;;i++{
-		bi, err:=findDownstreamInBuilds(env,parentName,childName,parentJobID)
-		if err!=nil{
-			queueId, err:=findDownstreamInQueue(env,parentName,childName,parentJobID)
+func watchNext(env jb.Env, parentName string, childName string, parentJobID int, keyCh chan string) error {
+	for i := 0; ; i++ {
+		bi, err := findDownstreamInBuilds(env, parentName, childName, parentJobID)
+		if err != nil {
+			queueId, err := findDownstreamInQueue(env, parentName, childName, parentJobID)
 			curSt.queue = queueId
 			curSt.name = childName
-			if err!=nil{
-				time.Sleep(250*time.Millisecond)
+			if err != nil {
+				time.Sleep(250 * time.Millisecond)
 				continue
 			}
-			number := waitForExecutor(env,queueId)
+			number := waitForExecutor(env, queueId)
 			curSt.id = number
-			watchTheJob(env,childName,number,keyCh)
-			return
-		}else{
-			id,_:=strconv.Atoi(bi.Id)
+			return watchTheJob(env, childName, number, keyCh)
+		} else {
+			id, _ := strconv.Atoi(bi.Id)
 			curSt.name = childName
 			curSt.id = id
-			watchTheJob(env,childName,id,keyCh)
-			return
+			return watchTheJob(env, childName, id, keyCh)
 		}
 	}
 
 }
 
-func findDownstreamInBuilds(env jb.Env, parentName string, childName string, parent int) (*jb.BuildInfo,error){
-	jobInfo := jb.GetJobInfo(env,childName)
-	number:=jobInfo.LastBuild.Number
-	for i:=5;i>=0;i-- {
-		bi,err:=jb.GetBuildInfo(env,childName,number-i)
-		if err!=nil{
+func findDownstreamInBuilds(env jb.Env, parentName string, childName string, parent int) (*jb.BuildInfo, error) {
+	jobInfo := jb.GetJobInfo(env, childName)
+	number := jobInfo.LastBuild.Number
+	for i := 5; i >= 0; i-- {
+		bi, err := jb.GetBuildInfo(env, childName, number-i)
+		if err != nil {
 			continue
 		}
-		for _,a:= range bi.Actions{
-			for _,c:= range a.Causes{
-				if c.UpstreamBuild ==parent&&c.UpstreamProject==parentName{
-					return bi,nil
+		for _, a := range bi.Actions {
+			for _, c := range a.Causes {
+				if c.UpstreamBuild == parent && c.UpstreamProject == parentName {
+					return bi, nil
 				}
 			}
 		}
@@ -373,14 +432,14 @@ func findDownstreamInBuilds(env jb.Env, parentName string, childName string, par
 	return &jb.BuildInfo{}, errors.New("not found")
 }
 
-func findDownstreamInQueue(env jb.Env, parentName string, childName string, parentJobID int) (int,error){
+func findDownstreamInQueue(env jb.Env, parentName string, childName string, parentJobID int) (int, error) {
 	queues := jb.GetQueues(env)
-	for _,queue:=range queues.Items {
-		if queue.Task.Name==childName{
-			for _,  action:=range queue.Actions{
-				for _, cause:=range action.Causes{
-					if cause.UpstreamBuild ==parentJobID&&cause.UpstreamProject==parentName{
-						return queue.ID,nil
+	for _, queue := range queues.Items {
+		if queue.Task.Name == childName {
+			for _, action := range queue.Actions {
+				for _, cause := range action.Causes {
+					if cause.UpstreamBuild == parentJobID && cause.UpstreamProject == parentName {
+						return queue.ID, nil
 					}
 				}
 			}
@@ -389,16 +448,16 @@ func findDownstreamInQueue(env jb.Env, parentName string, childName string, pare
 	return 0, errors.New("not found")
 }
 
-func listenKeys(out chan string){
+func listenKeys(out chan string) {
 	stdinListener.NewListener()
-	bt:= make([]byte, 1)
+	bt := make([]byte, 1)
 	for {
-		n, err:=stdinListener.Read(bt)
-		if err!=nil|| n==0{
+		n, err := stdinListener.Read(bt)
+		if err != nil || n == 0 {
 			return
 		}
 		barMutex.Lock()
-		if 	listenerStatus{
+		if listenerStatus {
 			out <- string(bt)
 		}
 		barMutex.Unlock()
@@ -406,12 +465,12 @@ func listenKeys(out chan string){
 
 }
 
-func listenInterrupt(env jb.Env){
+func listenInterrupt(env jb.Env) {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
-	go func(){
+	go func() {
 		for _ = range c {
-			if curSt.name!=""{
+			if curSt.name != "" {
 				barMutex.Lock()
 				stdinListener.NewListener()
 				readline.Stdin = stdinListener
@@ -424,39 +483,39 @@ func listenInterrupt(env jb.Env){
 				if err != nil { // io.EOF
 					os.Exit(1)
 				}
-				if line=="Y" || line == "y"{
+				if line == "Y" || line == "y" {
 
-					if curSt.queue!=0{
+					if curSt.queue != 0 {
 						fmt.Println("canceling queue...")
-						jb.CancelQueue(env,  curSt.queue)
+						jb.CancelQueue(env, curSt.queue)
 					}
-					if curSt.id!=0{
+					if curSt.id != 0 {
 						fmt.Println("canceling job...")
-						status, err:=jb.CancelJob(env, curSt.name, curSt.id)
-						if err!=nil{
-							fmt.Printf("failed to cancel job, error %s",err)
+						status, err := jb.CancelJob(env, curSt.name, curSt.id)
+						if err != nil {
+							fmt.Printf("failed to cancel job, error %s", err)
 							os.Exit(0)
 						}
-						if status!="ABORTED"{
-							fmt.Printf("Job already has been executed, status: %s",status)
+						if status != "ABORTED" {
+							fmt.Printf("Job already has been executed, status: %s", status)
 							os.Exit(0)
 						}
 						fmt.Println("Canceled")
 						os.Exit(0)
 					}
-					if curSt.queue!=0&&curSt.id==0{
-						jobInfo := jb.GetJobInfo(env,curSt.name)
-						number:=jobInfo.LastBuild.Number
-						for i:=0;i<3;i++ {
-							bi,err:=jb.GetBuildInfo(env,curSt.name,number-i)
-							if err!=nil{
+					if curSt.queue != 0 && curSt.id == 0 {
+						jobInfo := jb.GetJobInfo(env, curSt.name)
+						number := jobInfo.LastBuild.Number
+						for i := 0; i < 3; i++ {
+							bi, err := jb.GetBuildInfo(env, curSt.name, number-i)
+							if err != nil {
 								continue
 							}
-							if bi.QueueId==curSt.queue{
-								if bi.Result!="ABORTED"{
-									fmt.Printf("Job already has been executed, status: %s",bi.Result)
+							if bi.QueueId == curSt.queue {
+								if bi.Result != "ABORTED" {
+									fmt.Printf("Job already has been executed, status: %s", bi.Result)
 									os.Exit(0)
-								}else{
+								} else {
 									fmt.Println("Canceled!")
 									os.Exit(0)
 								}
@@ -474,10 +533,3 @@ func listenInterrupt(env jb.Env){
 	}()
 
 }
-
-
-
-
-
-
-

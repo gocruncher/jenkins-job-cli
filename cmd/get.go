@@ -21,103 +21,121 @@ import (
 	"github.com/spf13/cobra"
 	"os"
 	"text/tabwriter"
+	"time"
 )
-
-
 
 var (
 	noheader bool
+	ENV      string
 )
+
+// -- string Value
+//type stringValue string
+
+//func newStringValue(val string, p *string) *stringValue {
+//	*p = val
+//	return (*stringValue)(p)
+//}
+//
+//func (s *stringValue) Set(val string) error {
+//	*s = stringValue(val)
+//	return nil
+//}
+//func (s *stringValue) Type() string {
+//	return "string"
+//}
+//func (s *stringValue) String() string { return string(*s) }
 
 func init() {
 
+	annotation := make(map[string][]string)
+	annotation[cobra.BashCompCustom] = []string{"__jb_get_env"}
 
+	//flag := &pflag.Flag{
+	//	Name:        "env",
+	//	Usage:       "Current environment",
+	//	Annotations: annotation,
+	//	Value:newStringValue("", &ENV),
+	//}
 	var getCmd = &cobra.Command{
 		Use:   "get",
 		Short: "Display any resources(settings, views, jobs)",
 		Run: func(cmd *cobra.Command, args []string) {
-			showAllEnvs()
+			var eName string
+			if len(args) > 0 {
+				eName = args[0]
+			}
+
+			err, _ := jb.GetEnv(eName)
+			if err != nil {
+				eName = string(jb.GetDefEnv())
+			}
+
+			ch := make(chan struct{}, 1)
+
+			// Run your long running function in it's own goroutine and pass back it's
+			// response into our channel.
+			go func() {
+				env := jb.Init(eName)
+				showAllJobs(env)
+				ch <- struct{}{}
+			}()
+			select {
+			case <-ch:
+				os.Exit(0)
+			case <-time.After(100 * time.Millisecond):
+				os.Exit(0)
+			}
+
 		},
 	}
-	getCmd.Flags().BoolVar(&noheader,"no-headers",false,"no-headers")
 
-	for _, env:=range jb.GetEnvs(){
-		curEnv:=env
-		var envCmd = &cobra.Command{
-			Use:   string(env.Name),
-			Short: "Get environment info",
-			Run: func(cmd *cobra.Command, args []string) {
-				showAllJobs(curEnv)
-			},
-		}
-		envCmd.Flags().BoolVar(&noheader,"no-headers",false,"no-headers")
-
-
-		//for _, view:=range jb.GetBundle(env).Views{
-		//	//curView := view
-		//	//var viewCmd = &cobra.Command{
-		//	//	Use:   string(view.Name),
-		//	//	Short: "Get environment info",
-		//	//	ValidArgs: []string{},
-		//	//	Run: func(cmd *cobra.Command, args []string) {
-		//	//		if len(args)>0{
-		//	//			os.Exit(1)
-		//	//		}
-		//	//		showAllJobs(curView)
-		//	//	},
-		//	//}
-		//	//viewCmd.Flags().BoolVar(&noheader,"no-headers",false,"no-headers")
-		//	//envCmd.AddCommand(viewCmd)
-		//
-		//
-		//}
-
-		getCmd.AddCommand(envCmd)
-
-	}
+	//getCmd.Flags().AddFlag(flag)
+	getCmd.Flags().BoolVar(&noheader, "no-headers", false, "no-headers")
+	//getCmd.Flags().StringVarP(&ENV, "env", "e", "", "")
+	//for _, env:=range jb.GetEnvs(){
+	//	curEnv:=env
+	//	var envCmd = &cobra.Command{
+	//		Use:   string(env.Name),
+	//		Short: "Get environment info",
+	//		Run: func(cmd *cobra.Command, args []string) {
+	//			showAllJobs(curEnv)
+	//		},
+	//	}
+	//	envCmd.Flags().BoolVar(&noheader,"no-headers",false,"no-headers")
+	//
+	//	getCmd.AddCommand(envCmd)
+	//
+	//}
 
 	rootCmd.AddCommand(getCmd)
 }
 
-func showAllEnvs(){
+func showAllEnvs() {
 	w := new(tabwriter.Writer)
 	// Format in tab-separated columns with a tab stop of 8.
 	w.Init(os.Stdout, 0, 8, 0, '\t', 0)
-	if !noheader{
-		fmt.Fprintf(w, "%s\t%s\t%s\n","Name", "URL","Authorization")
+	if !noheader {
+		fmt.Fprintf(w, "%s\t%s\t%s\n", "Name", "URL", "Authorization")
 	}
-	for _, e:= range jb.GetEnvs(){
-		fmt.Fprintf(w, "%s\t%s\t%s\n",e.Name,e.Url, e.Type)
+	for _, e := range jb.GetEnvs() {
+		fmt.Fprintf(w, "%s\t%s\t%s\n", e.Name, e.Url, e.Type)
 	}
 	fmt.Fprintln(w)
 	w.Flush()
 }
 
-func showAllView(env jb.Env){
+func showAllJobs(env jb.Env) {
 	w := new(tabwriter.Writer)
 	// Format in tab-separated columns with a tab stop of 8.
 	w.Init(os.Stdout, 0, 8, 0, '\t', 0)
-	if !noheader{
-		fmt.Fprintf(w, "%s\t%s\n","Name", "URL")
+	if !noheader {
+		fmt.Fprintf(w, "%s\t%s\n", "Name", "URL")
 	}
-	for _, v:= range jb.GetBundle(env).Views{
-		fmt.Fprintf(w, "%s\t%s\n",v.Name,v.URL)
-	}
-	fmt.Fprintln(w)
-	w.Flush()
-}
-
-func showAllJobs(env jb.Env){
-	w := new(tabwriter.Writer)
-	// Format in tab-separated columns with a tab stop of 8.
-	w.Init(os.Stdout, 0, 8, 0, '\t', 0)
-	if !noheader{
-		fmt.Fprintf(w, "%s\t%s\n","Name", "URL")
-	}
-	for _, view:= range jb.GetBundle(env).Views{
+	for _, view := range jb.GetBundle(env).Views {
 		//fmt.Printf("views: %+v",view)
-		for _, j:= range view.Jobs{
-			fmt.Fprintf(w, "%s\t%s\n",j.Name,j.URL)
+		for _, j := range view.Jobs {
+			fmt.Fprintf(w, "%s\t%s\n", j.Name, j.URL)
 		}
 	}
 	fmt.Fprintln(w)

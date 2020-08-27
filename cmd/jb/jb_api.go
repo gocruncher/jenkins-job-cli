@@ -48,6 +48,23 @@ func GetEnvs() []Env {
 	return config.Envs
 }
 
+func GetEnv(name string) (error, Env) {
+	var env Env
+	if name == "" {
+		name = string(GetDefEnv())
+	}
+	for _, e := range GetEnvs() {
+		if e.Name == EName(name) {
+			env = e
+			break
+		}
+	}
+	if env == (Env{}) {
+		return errors.New("environment not found"), env
+	}
+	return nil, env
+}
+
 func (ji *JobInfo) GetParameterDefinitions() []ParameterDefinitions {
 	for _, j := range ji.Property {
 		if len(j.ParameterDefinitions) > 0 {
@@ -57,14 +74,28 @@ func (ji *JobInfo) GetParameterDefinitions() []ParameterDefinitions {
 	return []ParameterDefinitions{}
 }
 
-func SetEnv(env Env) {
-	for i, e := range config.Envs {
-		if e.Name == env.Name {
-			config.Envs[i] = env
-			return
+func GetDefEnv() EName {
+	if config.Use == "" {
+		return GetEnvs()[0].Name
+	}
+	return config.Use
+}
+func SetDef(eName string) {
+	var env Env
+	for _, e := range GetEnvs() {
+		if e.Name == EName(eName) {
+			env = e
+			break
 		}
 	}
-	config.Envs = append(config.Envs, env)
+	if env == (Env{}) {
+		panic("Environment " + eName + " is not found or could not be initialised")
+	}
+	config.Use = env.Name
+	SetConf()
+}
+
+func SetConf() {
 	out, _ := yaml.Marshal(config)
 	if _, err := os.Stat(homeDir); os.IsNotExist(err) {
 		err := os.MkdirAll(homeDir, os.ModePerm)
@@ -76,6 +107,17 @@ func SetEnv(env Env) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func SetEnv(env Env) {
+	for i, e := range config.Envs {
+		if e.Name == env.Name {
+			config.Envs[i] = env
+			return
+		}
+	}
+	config.Envs = append(config.Envs, env)
+	SetConf()
 
 }
 
@@ -201,7 +243,11 @@ func GetLastSuccessfulBuildInfo(env Env, job string) (*BuildInfo, error) {
 }
 
 func Build(env Env, job string, query string) string {
-	code, rsp, headers, err := req(env, "job/"+job+"/buildWithParameters?"+query, []byte{})
+	target := "/build"
+	if len(query) > 0 {
+		target = "/buildWithParameters?" + query
+	}
+	code, rsp, headers, err := req(env, "job/"+job+target, []byte{})
 	if err != nil {
 		panic(err)
 	}

@@ -23,15 +23,21 @@ import (
 	"os"
 	"time"
 )
+
 const (
 	bash_completion_func = `__jb_parse_get()
 {
     local jb_output out
-	echo "step5 ${nouns[@]}" >> /tmp/jblogs
+	echo "will be run jb get --no-headers ${nouns[@]} 2>/dev/null" >> /tmp/jblogs
     if jb_output=$(jb get --no-headers "${nouns[@]}" 2>/dev/null); then
         out=($(echo "${jb_output}" | awk '{print $1}'))
         COMPREPLY=( $( compgen -W "${out[*]}" -- "$cur" ) )
     fi
+}
+
+__jb_get_env()
+{
+    return 0
 }
 
 __jb_get_resource()
@@ -49,7 +55,7 @@ __jb_get_resource()
 }
 
 __jb_custom_func() {
-	echo "step0 ${last_command}" >> /tmp/jblogs
+	echo "step0 ${last_command} and ${flags_with_completion[@]}|${nouns[@]}|${cur}" >> /tmp/jblogs
     case ${last_command} in
         jb_get | jb_run | jb_delete | jb_stop)
 			echo "step2" >> /tmp/jblogs
@@ -60,8 +66,11 @@ __jb_custom_func() {
             ;;
     esac
 }
-`)
+`
+)
+
 var cfgFile string
+
 const defaultBoilerPlate = `
 # Copyright 2016 The Kubernetes Authors.
 #
@@ -77,28 +86,28 @@ const defaultBoilerPlate = `
 # See the License for the specific language governing permissions and
 # limitations under the License.
 `
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "jb",
 	Short: "jb - simple command line utility which just runs any jenkins job",
-	Long: `jb - simple command line utility which just runs any jenkins job.
-Before you start, please configure access to the Jenkins service using the following command:
+	Long: `jb is simple command line utility which just runs any jenkins job.
+Before you start, please configure access to the Jenkins service using "jb set" command. For more information you can type "jb help set"
+After that, you can enable shell autocompletion for convenient work. To do this, run following:
+ # For zsh completion	
+   echo 'source <(jb completion zsh)' >>~/.zshrc
+ # For bash completion
+   echo 'source <(jb completion bash)' >>~/.bashrc
   
-  jb set <name>
-
-where name is alias of your jenkins service(pi, uat, test, etc.) which will be used in other commands. 
-This execution will run interactive dialog where you have to answer on some question. 
-Please make sure that the above command was executed successfully. If yes, you can run any jobs available on this Jenkins service
-Specifying a name that already exists will merge new fields on top of existing values for those fields.
-For convenient work you can enable shell autocompletion:
-  # For bash completion`,
+`,
 	//ValidArgs: []string{"run","get","set","del","completion"},
 	BashCompletionFunction: bash_completion_func,
+
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	//	Run: func(cmd *cobra.Command, args []string) { },
-	Example: `	jb run test user_view app-build
-	jb run prod user_view web-build`,
+	Example: `	jb run app-build
+	jb run -e prod web-build`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -110,14 +119,9 @@ func Execute() {
 	}
 }
 
-
 func getTime() int64 {
 	return time.Now().UnixNano() / int64(time.Millisecond)
 }
-
-
-
-
 
 func runCompletionZsh(out io.Writer, boilerPlate string, root *cobra.Command) error {
 	zshHead := "#compdef jb\n"
@@ -233,5 +237,3 @@ __jb_bash_source <(__jb_convert_bash_to_zsh)
 	out.Write([]byte(zshTail))
 	return nil
 }
-
-

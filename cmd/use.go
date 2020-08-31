@@ -8,13 +8,15 @@ import (
 
 func init() {
 	useCmd := &cobra.Command{
-		Use:                   "use ENV_NAME",
+		Use:                   "use NAME",
 		DisableFlagsInUseLine: true,
-		Short:                 "Makes jenkins environment by default",
+		Short:                 "Makes a specific Jenkins name by default",
 		Run: func(cmd *cobra.Command, args []string) {
 			use(cmd)
 		},
-		Args: cobra.ExactArgs(1),
+
+		PersistentPreRunE: preRunE,
+		Args:              cobra.ExactArgs(1),
 	}
 	rootCmd.AddCommand(useCmd)
 }

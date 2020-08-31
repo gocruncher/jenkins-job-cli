@@ -30,7 +30,7 @@ func DelEnv(name EName) error {
 			return nil
 		}
 	}
-	return fmt.Errorf("'%s' environment is not found", name)
+	return fmt.Errorf("'%s' name is not found", name)
 }
 
 func Check(env Env) error {
@@ -60,7 +60,7 @@ func GetEnv(name string) (error, Env) {
 		}
 	}
 	if env == (Env{}) {
-		return errors.New("environment not found"), env
+		return ErrNoEnv, env
 	}
 	return nil, env
 }
@@ -136,7 +136,7 @@ func SetEnv(env Env) {
 //	}
 //	return jobinfo
 //}
-func GetJobInfo(env Env, jobName string) *JobInfo {
+func GetJobInfo(env Env, jobName string) (error, *JobInfo) {
 	bundle := GetBundle(env)
 	var jobInfo *JobInfo
 	for _, ji := range bundle.JobsInfo {
@@ -145,14 +145,14 @@ func GetJobInfo(env Env, jobName string) *JobInfo {
 			break
 		}
 	}
-	var fetchJobInfo = func() JobInfo {
+	var fetchJobInfo = func() (error, JobInfo) {
 		var ji JobInfo
 		code, rsp, _, err := req(env, "job/"+jobName+"/api/json", []byte{})
 		if err != nil {
 			panic(err)
 		}
 		if code != 200 {
-			panic("failed to get job details,code" + strconv.Itoa(code) + ", " + string(rsp))
+			return ErrNoJob, ji
 		}
 		err = json.Unmarshal(rsp, &ji)
 		if err != nil {
@@ -162,17 +162,20 @@ func GetJobInfo(env Env, jobName string) *JobInfo {
 		defer mutex.Unlock()
 		bundle.JobsInfo = append(bundle.JobsInfo, ji)
 		updateCache(env, bundle)
-		return ji
+		return nil, ji
 	}
 	if jobInfo != nil {
 		//fmt.Println("async")
 		go fetchJobInfo()
 	} else {
 		//fmt.Println("sync")
-		ji := fetchJobInfo()
+		err, ji := fetchJobInfo()
+		if err != nil {
+			return err, jobInfo
+		}
 		jobInfo = &ji
 	}
-	return jobInfo
+	return nil, jobInfo
 
 }
 

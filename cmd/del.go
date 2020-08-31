@@ -8,7 +8,7 @@ import (
 
 func init() {
 	delCmd := &cobra.Command{
-		Use:   "del",
+		Use:   "del NAME",
 		Short: "Delete a particular jenkins settings in the config file",
 		Run: func(cmd *cobra.Command, args []string) {
 			del(args)
@@ -19,7 +19,7 @@ func init() {
 
 func del(args []string) {
 	if len(args) == 0 {
-		fmt.Println("which environment should be removed?")
+		fmt.Println("which Jenkins should be removed?")
 		for {
 			name := getAnswer("name: ", "")
 			if err := jb.DelEnv(jb.EName(name)); err != nil {
@@ -32,7 +32,8 @@ func del(args []string) {
 	}
 	if err := jb.DelEnv(jb.EName(args[0])); err != nil {
 		fmt.Println(err)
+	} else {
+		fmt.Println("Removed.")
 	}
-	fmt.Println("Removed.")
 
 }

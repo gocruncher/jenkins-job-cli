@@ -64,11 +64,11 @@ func init() {
 			run_job(args[0])
 		},
 
-		Args: cobra.ExactArgs(1),
-
+		Args:         cobra.ExactArgs(1),
+		PreRunE:      preRunE,
 		SilenceUsage: false,
 	}
-	runCmd.Flags().StringVarP(&ENV, "env", "e", "", "Current environment")
+	runCmd.Flags().StringVarP(&ENV, "name", "n", "", "current Jenkins name")
 	runCmd.SetUsageTemplate(usageTamplate)
 	rootCmd.AddCommand(runCmd)
 }
@@ -80,8 +80,23 @@ func run_job(name string) {
 
 	bar.InitTerminal()
 	data := map[string]string{}
-	jobInfo := jb.GetJobInfo(env, name)
+	err, jobInfo := jb.GetJobInfo(env, name)
+	if err != nil {
+		if err == jb.ErrNoJob {
+			fmt.Printf("Error: job '%s' does not exist", name)
+			os.Exit(1)
+		}
+		panic(err)
+	}
 	params := jobInfo.GetParameterDefinitions()
+	if len(params) == 0 {
+		rl, err := readline.New("Press any key to continue: ")
+		_, err = rl.Readline()
+		if err != nil {
+			panic(err)
+		}
+		defer rl.Close()
+	}
 	for _, pd := range params {
 		cline := ""
 		defVal := pd.DefaultParameterValue.Value
@@ -147,7 +162,7 @@ func run_job(name string) {
 	curSt.name = name
 	number := waitForExecutor(env, queueId1)
 	curSt.id = number
-	err := watchTheJob(env, name, number, keyCh)
+	err = watchTheJob(env, name, number, keyCh)
 	if err != nil {
 		return
 	}
@@ -414,7 +429,10 @@ func watchNext(env jb.Env, parentName string, childName string, parentJobID int,
 }
 
 func findDownstreamInBuilds(env jb.Env, parentName string, childName string, parent int) (*jb.BuildInfo, error) {
-	jobInfo := jb.GetJobInfo(env, childName)
+	err, jobInfo := jb.GetJobInfo(env, childName)
+	if err != nil {
+		panic(err)
+	}
 	number := jobInfo.LastBuild.Number
 	for i := 5; i >= 0; i-- {
 		bi, err := jb.GetBuildInfo(env, childName, number-i)
@@ -504,7 +522,10 @@ func listenInterrupt(env jb.Env) {
 						os.Exit(0)
 					}
 					if curSt.queue != 0 && curSt.id == 0 {
-						jobInfo := jb.GetJobInfo(env, curSt.name)
+						err, jobInfo := jb.GetJobInfo(env, curSt.name)
+						if err != nil {
+							panic(err)
+						}
 						number := jobInfo.LastBuild.Number
 						for i := 0; i < 3; i++ {
 							bi, err := jb.GetBuildInfo(env, curSt.name, number-i)

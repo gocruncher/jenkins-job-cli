@@ -16,6 +16,7 @@ limitations under the License.
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"github.com/ASalimov/jbuilder/cmd/jb"
 	"github.com/spf13/cobra"
@@ -58,40 +59,45 @@ func init() {
 	//	Value:newStringValue("", &ENV),
 	//}
 	var getCmd = &cobra.Command{
-		Use:   "get",
-		Short: "Display any resources(settings, views, jobs)",
-		Run: func(cmd *cobra.Command, args []string) {
-			var eName string
-			if len(args) > 0 {
-				eName = args[0]
-			}
-
-			err, _ := jb.GetEnv(eName)
-			if err != nil {
-				eName = string(jb.GetDefEnv())
-			}
-
-			ch := make(chan struct{}, 1)
-
-			// Run your long running function in it's own goroutine and pass back it's
-			// response into our channel.
-			go func() {
-				env := jb.Init(eName)
-				showAllJobs(env)
-				ch <- struct{}{}
-			}()
-			select {
-			case <-ch:
-				os.Exit(0)
-			case <-time.After(100 * time.Millisecond):
+		Use:   "get [names|jobs]",
+		Short: "Display any resources(settings, jobs)",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 || args[0] == "names" {
+				showAllEnvs()
 				os.Exit(0)
 			}
+			if args[0] == "jobs" {
+				eName := ENV
+				err, _ := jb.GetEnv(eName)
+				if err != nil {
+					eName = string(jb.GetDefEnv())
+				}
+
+				ch := make(chan struct{}, 1)
+
+				// Run your long running function in it's own goroutine and pass back it's
+				// response into our channel.
+				go func() {
+					env := jb.Init(eName)
+					showAllJobs(env)
+					ch <- struct{}{}
+				}()
+				select {
+				case <-ch:
+					os.Exit(0)
+				case <-time.After(100 * time.Millisecond):
+					os.Exit(0)
+				}
+			}
+			return errors.New("wrong argument, valid values are 'names' and 'jobs'")
 
 		},
+		PreRunE: preRunE,
 	}
 
 	//getCmd.Flags().AddFlag(flag)
 	getCmd.Flags().BoolVar(&noheader, "no-headers", false, "no-headers")
+	getCmd.Flags().StringVarP(&ENV, "name", "n", "", "current Jenkins name")
 	//getCmd.Flags().StringVarP(&ENV, "env", "e", "", "")
 	//for _, env:=range jb.GetEnvs(){
 	//	curEnv:=env

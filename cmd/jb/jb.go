@@ -3,6 +3,7 @@ package jb
 import (
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
@@ -23,6 +24,8 @@ const configFile = "config.yaml"
 var config Config
 var bundles []*Bundle
 var mutex sync.Mutex
+var ErrNoEnv = errors.New("no env")
+var ErrNoJob = errors.New("no job")
 
 func init() {
 	homeDir, _ = os.UserHomeDir()
@@ -33,7 +36,7 @@ func init() {
 func Init(envName string) Env {
 	err, env := GetEnv(envName)
 	if err != nil {
-		panic(err)
+		panic(ErrNoEnv)
 	}
 	initBundle(env)
 	return env

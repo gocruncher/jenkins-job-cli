@@ -17,7 +17,9 @@ package cmd
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
+	"github.com/ASalimov/jbuilder/cmd/jb"
 	"github.com/spf13/cobra"
 	"io"
 	"os"
@@ -28,7 +30,7 @@ const (
 	bash_completion_func = `__jb_parse_get()
 {
     local jb_output out
-	echo "will be run jb get --no-headers ${nouns[@]} 2>/dev/null" >> /tmp/jblogs
+	echo "will be run jb get jobs --no-headers -n ${nouns[@]} 2>/dev/null" >> /tmp/jblogs
     if jb_output=$(jb get --no-headers "${nouns[@]}" 2>/dev/null); then
         out=($(echo "${jb_output}" | awk '{print $1}'))
         COMPREPLY=( $( compgen -W "${out[*]}" -- "$cur" ) )
@@ -91,23 +93,27 @@ const defaultBoilerPlate = `
 var rootCmd = &cobra.Command{
 	Use:   "jb",
 	Short: "jb - simple command line utility which just runs any jenkins job",
-	Long: `jb is simple command line utility which just runs any jenkins job.
-Before you start, please configure access to the Jenkins service using "jb set" command. For more information you can type "jb help set"
-After that, you can enable shell autocompletion for convenient work. To do this, run following:
- # For zsh completion	
+	Long: `jbuilder is simple command line utility which just runs 
+any jenkins job. Before you start, please configure access 
+to the Jenkins service using "jb set" command. After that, you can 
+enable shell autocompletion for convenient work. To do this, run following:
+   # for zsh completion:	
    echo 'source <(jb completion zsh)' >>~/.zshrc
- # For bash completion
+
+   # for bash completion:
    echo 'source <(jb completion bash)' >>~/.bashrc
   
 `,
 	//ValidArgs: []string{"run","get","set","del","completion"},
 	BashCompletionFunction: bash_completion_func,
-
+	SilenceErrors:          true,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	//	Run: func(cmd *cobra.Command, args []string) { },
-	Example: `	jb run app-build
-	jb run -e prod web-build`,
+	Example: `  # Start 'app-build' job in the current jenkins
+  jb run app-build
+  # Start 'web-build' job in jenkins named prod
+  jb run -e prod web-build`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -236,4 +242,15 @@ __jb_bash_source <(__jb_convert_bash_to_zsh)
 `
 	out.Write([]byte(zshTail))
 	return nil
+}
+
+func preRunE(cmd *cobra.Command, args []string) error {
+	if len(jb.GetEnvs()) == 0 {
+		return errors.New("There is no any jenkins settings. For this, use 'jb set NAME' command.")
+	}
+	err, _ := jb.GetEnv(ENV)
+	if err == jb.ErrNoEnv {
+		return errors.New(fmt.Sprintf("Jenkins '%s' is not found", ENV))
+	}
+	return err
 }

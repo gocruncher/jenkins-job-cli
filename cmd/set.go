@@ -24,9 +24,6 @@ Specifying a NAME that already exists will merge new fields on top of existing v
 }
 
 func set(args []string) {
-	if len(args) > 0 {
-		jb.Init(args[0])
-	}
 	fmt.Println("please specify requires parameters:")
 	var name string
 	if len(args) == 0 {

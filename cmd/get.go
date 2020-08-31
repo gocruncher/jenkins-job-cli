@@ -68,6 +68,10 @@ func init() {
 			}
 			if args[0] == "jobs" {
 				eName := ENV
+				if len(args) > 1 {
+					eName = args[1]
+				}
+
 				err, _ := jb.GetEnv(eName)
 				if err != nil {
 					eName = string(jb.GetDefEnv())
@@ -82,6 +86,7 @@ func init() {
 					showAllJobs(env)
 					ch <- struct{}{}
 				}()
+
 				select {
 				case <-ch:
 					os.Exit(0)

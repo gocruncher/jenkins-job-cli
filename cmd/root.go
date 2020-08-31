@@ -30,8 +30,8 @@ const (
 	bash_completion_func = `__jb_parse_get()
 {
     local jb_output out
-	echo "will be run jb get jobs --no-headers -n ${nouns[@]} 2>/dev/null" >> /tmp/jblogs
-    if jb_output=$(jb get --no-headers "${nouns[@]}" 2>/dev/null); then
+	echo "will be run jb get jobs --no-headers ${nouns[@]} 2>/dev/null" >> /tmp/jblogs
+    if jb_output=$(jb get jobs --no-headers "${nouns[@]}" 2>/dev/null); then
         out=($(echo "${jb_output}" | awk '{print $1}'))
         COMPREPLY=( $( compgen -W "${out[*]}" -- "$cur" ) )
     fi
@@ -102,7 +102,9 @@ enable shell autocompletion for convenient work. To do this, run following:
 
    # for bash completion:
    echo 'source <(jb completion bash)' >>~/.bashrc
-  
+if you some issue with compgen, try to add following line to your .bashrc or .zshrc file:
+   autoload -Uz compinit && compinit
+
 `,
 	//ValidArgs: []string{"run","get","set","del","completion"},
 	BashCompletionFunction: bash_completion_func,

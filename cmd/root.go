@@ -102,8 +102,7 @@ enable shell autocompletion for convenient work. To do this, run following:
 
    # for bash completion:
    echo 'source <(jb completion bash)' >>~/.bashrc
-if you some issue with compgen, try to add following line to your .bashrc or .zshrc file:
-   autoload -Uz compinit && compinit
+if this does not work for some reason, try calling "jb completion check" command that might help you to figure out what is wrong
 
 `,
 	//ValidArgs: []string{"run","get","set","del","completion"},

@@ -3,10 +3,14 @@ package cmd
 import (
 	"fmt"
 	"github.com/spf13/cobra"
+	"io/ioutil"
+	"log"
 	"os"
+	"os/exec"
+	"strings"
 )
 
-func init(){
+func init() {
 	// completionCmd represents the completion command
 	var completionCmd = &cobra.Command{
 		Use:   "completion SHELL",
@@ -53,10 +57,77 @@ To configure your bash shell to load completions for each session add to your ba
 . <(bitbucket completion)
 `,
 		Run: func(cmd *cobra.Command, args []string) {
-			runCompletionZsh(os.Stdout,"",rootCmd)
+			runCompletionZsh(os.Stdout, "", rootCmd)
+		},
+	}
+	var completionCmdCheck = &cobra.Command{
+		Use:   "check",
+		Short: "Checks you OS completions settings",
+		Long:  `Checks you OS completions settings`,
+		Run: func(cmd *cobra.Command, args []string) {
+			check()
 		},
 	}
 	completionCmd.AddCommand(completionCmdBash)
 	completionCmd.AddCommand(completionCmdZsh)
+	completionCmd.AddCommand(completionCmdCheck)
 	rootCmd.AddCommand(completionCmd)
+}
+
+func check() {
+	homeDir, _ := os.UserHomeDir()
+	cmd := os.Getenv("SHELL")
+	if strings.Contains(cmd, "zsh") {
+		fmt.Println("==> current shell is zsh - OK")
+		profileFileB, err := ioutil.ReadFile(homeDir + "/.zshrc")
+		if err != nil {
+			fmt.Println(
+				`~/.zshrc file was not found. As the next step, please create file and add the following line:
+  source <(jb completion zsh)`)
+			return
+		}
+		fmt.Println("==> file ~/.zshrc is exist - OK")
+		if !strings.Contains(string(profileFileB), "jb completion zsh") {
+			fmt.Println("==> completion script has not been added - FAILED")
+			fmt.Println(
+				`Error: ~/.zshrc should have line with jb completion script for the shell. Make sure, that the following line has been added the the ~/.zshrc file:
+    source <(jb completion zsh)`)
+			return
+		}
+		fmt.Println("==> completion script has been added - OK")
+		cmd := exec.Command("zsh", "-c", "source ~/.zshrc; compdef")
+		stderr, err := cmd.StderrPipe()
+		log.SetOutput(os.Stderr)
+		if err := cmd.Start(); err != nil {
+			log.Fatal(err)
+		}
+		rsp, _ := ioutil.ReadAll(stderr)
+		if strings.Contains(string(rsp), "not found") {
+			fmt.Println("==> compdef functions is not exist - FAILED")
+			fmt.Println(
+				`Error: current shell does not have required 'compdef' function. Add the following to the beginning of your ~/.zshrc file:
+    autoload -Uz compinit
+    compinit`)
+			return
+		}
+		fmt.Println("==> compdef functions is exist - OK")
+		compinitPos := strings.Index(string(profileFileB), "compinit")
+		scriptPos := strings.Index(string(profileFileB), "jb completion zsh")
+		if compinitPos > scriptPos {
+			fmt.Println("==> the initialized compdef script was added incorrectly - FAILED")
+			fmt.Println(
+				`Error: the initialized compdef script was added incorrectly. Move the following to the beginning of your ~/.zshrc file
+    autoload -Uz compinit
+    compinit`)
+			return
+		}
+		fmt.Println("Checked. After reloading your shell, jb autocompletion should be working.")
+		return
+	}
+	if strings.Contains(cmd, "bash") {
+		fmt.Println("Current shell is bash")
+		return
+	}
+	fmt.Printf("shell '%s' is not supported yet", cmd)
+
 }

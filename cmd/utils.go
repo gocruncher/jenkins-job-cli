@@ -8,10 +8,10 @@ import (
 func getAnswer(question string, defAnswer string) string {
 	for {
 		rl, err := readline.New(question)
+		defer rl.Close()
 		if err != nil {
 			panic(err)
 		}
-		defer rl.Close()
 		line, err := rl.ReadlineWithDefault(defAnswer)
 		line = strings.TrimSpace(line)
 		if err != nil || len(line) == 0 { // io.EOF

@@ -91,11 +91,11 @@ func run_job(name string) {
 	params := jobInfo.GetParameterDefinitions()
 	if len(params) == 0 {
 		rl, err := readline.New("Press any key to continue: ")
+		defer rl.Close()
 		_, err = rl.Readline()
 		if err != nil {
 			panic(err)
 		}
-		defer rl.Close()
 	}
 	for _, pd := range params {
 		cline := ""
@@ -103,10 +103,10 @@ func run_job(name string) {
 		curChoices := pd.Choices
 		for {
 			rl, err := readline.New(chalk.Underline.TextStyle(pd.Name) + ": ")
+			defer rl.Close()
 			if err != nil {
 				panic(err)
 			}
-			defer rl.Close()
 			line, err := rl.ReadlineWithDefault(defVal)
 
 			if err != nil { // io.EOF
@@ -493,10 +493,10 @@ func listenInterrupt(env jb.Env) {
 				stdinListener.NewListener()
 				readline.Stdin = stdinListener
 				rl, err := readline.New(fmt.Sprintf("There is active build: %s. Do you want to cancel it [Y/n]:", curSt.name))
+				defer rl.Close()
 				if err != nil {
 					panic(err)
 				}
-				defer rl.Close()
 				line, err := rl.Readline()
 				if err != nil { // io.EOF
 					os.Exit(1)

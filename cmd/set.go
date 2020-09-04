@@ -62,4 +62,5 @@ func set(args []string) {
 		return
 	}
 	jb.SetEnv(env)
+	fmt.Println("Added")
 }

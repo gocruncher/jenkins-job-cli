@@ -16,11 +16,12 @@ limitations under the License.
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"github.com/ASalimov/jbuilder/cmd/jb"
 	"github.com/spf13/cobra"
 	"os"
+	"regexp"
+	"strings"
 	"text/tabwriter"
 	"time"
 )
@@ -62,40 +63,26 @@ func init() {
 		Use:   "get [names|jobs]",
 		Short: "Display any resources(settings, jobs)",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 || args[0] == "names" {
-				showAllEnvs()
+			if len(args) == 0 && ENV != "" {
+				showAllJobs(jb.Init(ENV))
 				os.Exit(0)
 			}
-			if args[0] == "jobs" {
-				eName := ENV
-				if len(args) > 1 {
-					eName = args[1]
+			if len(args) > 1 && args[0] == "compline" {
+				space := regexp.MustCompile(`\s+`)
+				s := space.ReplaceAllString(args[1], " ")
+				s = strings.ReplaceAll(s, "=", " ")
+				s = strings.ReplaceAll(s, "--name", "-n")
+				if i := strings.Index(s, "-n"); i > 0 {
+					s1 := strings.Split(s[i+3:], " ")
+					showJobs(strings.TrimSpace(s1[0]))
+				} else {
+					showJobs(string(jb.GetDefEnv()))
 				}
-
-				err, _ := jb.GetEnv(eName)
-				if err != nil {
-					eName = string(jb.GetDefEnv())
-				}
-
-				ch := make(chan struct{}, 1)
-
-				// Run your long running function in it's own goroutine and pass back it's
-				// response into our channel.
-				go func() {
-					env := jb.Init(eName)
-					showAllJobs(env)
-					ch <- struct{}{}
-				}()
-
-				select {
-				case <-ch:
-					os.Exit(0)
-				case <-time.After(100 * time.Millisecond):
-					os.Exit(0)
-				}
+				os.Exit(0)
 			}
-			return errors.New("wrong argument, valid values are 'names' and 'jobs'")
-
+			showAllEnvs()
+			os.Exit(0)
+			return nil
 		},
 		PreRunE: preRunE,
 	}
@@ -120,6 +107,25 @@ func init() {
 	//}
 
 	rootCmd.AddCommand(getCmd)
+}
+
+func showJobs(eName string) {
+	ch := make(chan struct{}, 1)
+
+	// Run your long running function in it's own goroutine and pass back it's
+	// response into our channel.
+	go func() {
+		env := jb.Init(eName)
+		showAllJobs(env)
+		ch <- struct{}{}
+	}()
+
+	select {
+	case <-ch:
+		os.Exit(0)
+	case <-time.After(100 * time.Millisecond):
+		os.Exit(0)
+	}
 }
 
 func showAllEnvs() {

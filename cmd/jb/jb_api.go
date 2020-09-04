@@ -113,7 +113,7 @@ func SetEnv(env Env) {
 	for i, e := range config.Envs {
 		if e.Name == env.Name {
 			config.Envs[i] = env
-			return
+			break
 		}
 	}
 	config.Envs = append(config.Envs, env)

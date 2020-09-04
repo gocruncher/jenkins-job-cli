@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"github.com/spf13/cobra"
 	"io/ioutil"
@@ -79,7 +81,17 @@ func check() {
 	cmd := os.Getenv("SHELL")
 	if strings.Contains(cmd, "zsh") {
 		fmt.Println("==> current shell is zsh - OK")
-		profileFileB, err := ioutil.ReadFile(homeDir + "/.zshrc")
+		zshrc, err := ioutil.ReadFile(homeDir + "/.zshrc")
+		scanner := bufio.NewScanner(bytes.NewReader(zshrc))
+		var buffer strings.Builder
+		for scanner.Scan() {
+			text := scanner.Text()
+			trimText := strings.TrimSpace(text)
+			if len(trimText) > 0 && trimText[:1] != "#" {
+				buffer.WriteString(text)
+				buffer.WriteString("\n")
+			}
+		}
 		if err != nil {
 			fmt.Println(
 				`~/.zshrc file was not found. As the next step, please create file and add the following line:
@@ -87,7 +99,7 @@ func check() {
 			return
 		}
 		fmt.Println("==> file ~/.zshrc is exist - OK")
-		if !strings.Contains(string(profileFileB), "jb completion zsh") {
+		if !strings.Contains(buffer.String(), "jb completion zsh") {
 			fmt.Println("==> completion script has not been added - FAILED")
 			fmt.Println(
 				`Error: ~/.zshrc should have line with jb completion script for the shell. Make sure, that the following line has been added the the ~/.zshrc file:
@@ -103,24 +115,27 @@ func check() {
 		}
 		rsp, _ := ioutil.ReadAll(stderr)
 		if strings.Contains(string(rsp), "not found") {
-			fmt.Println("==> compdef functions is not exist - FAILED")
-			fmt.Println(
-				`Error: current shell does not have required 'compdef' function. Add the following to the beginning of your ~/.zshrc file:
+			compinitPos := strings.Index(buffer.String(), "autoload -Uz compinit")
+			scriptPos := strings.Index(buffer.String(), "jb completion zsh")
+			if compinitPos > -1 && compinitPos > scriptPos {
+				fmt.Println("==> the initialized compdef script was added incorrectly - FAILED")
+				fmt.Println(
+					`Error: the initialized compdef script was added incorrectly. Move the following to the beginning of your ~/.zshrc file
     autoload -Uz compinit
     compinit`)
-			return
+				return
+			} else {
+				fmt.Println("==> compdef functions is not exist - FAILED")
+				fmt.Println(
+					`Error: current shell does not have required 'compdef' function. Add the following to the beginning of your ~/.zshrc file:
+    autoload -Uz compinit
+    compinit`)
+				return
+			}
+
 		}
 		fmt.Println("==> compdef functions is exist - OK")
-		compinitPos := strings.Index(string(profileFileB), "compinit")
-		scriptPos := strings.Index(string(profileFileB), "jb completion zsh")
-		if compinitPos > scriptPos {
-			fmt.Println("==> the initialized compdef script was added incorrectly - FAILED")
-			fmt.Println(
-				`Error: the initialized compdef script was added incorrectly. Move the following to the beginning of your ~/.zshrc file
-    autoload -Uz compinit
-    compinit`)
-			return
-		}
+
 		fmt.Println("Checked. After reloading your shell, jb autocompletion should be working.")
 		return
 	}

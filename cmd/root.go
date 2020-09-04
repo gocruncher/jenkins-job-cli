@@ -30,8 +30,9 @@ const (
 	bash_completion_func = `__jb_parse_get()
 {
     local jb_output out
-	echo "will be run jb get jobs --no-headers ${nouns[@]} 2>/dev/null" >> /tmp/jblogs
-    if jb_output=$(jb get jobs --no-headers "${nouns[@]}" 2>/dev/null); then
+
+	echo "will be run jb get compline --no-headers ${COMP_LINE} 2>/dev/null" >> /tmp/jblogs
+    if jb_output=$(jb get compline --no-headers "${COMP_LINE}" 2>/dev/null); then
         out=($(echo "${jb_output}" | awk '{print $1}'))
         COMPREPLY=( $( compgen -W "${out[*]}" -- "$cur" ) )
     fi
@@ -57,6 +58,10 @@ __jb_get_resource()
 }
 
 __jb_custom_func() {
+	echo "step00000" >> /tmp/jblogs
+
+	printenv >> /tmp/jblogs
+	echo "step00001" >> /tmp/jblogs
 	echo "step0 ${last_command} and ${flags_with_completion[@]}|${nouns[@]}|${cur}" >> /tmp/jblogs
     case ${last_command} in
         jb_get | jb_run | jb_delete | jb_stop)

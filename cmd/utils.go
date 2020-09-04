@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/chzyer/readline"
+	"os"
 	"strings"
 )
 
@@ -14,7 +16,11 @@ func getAnswer(question string, defAnswer string) string {
 		}
 		line, err := rl.ReadlineWithDefault(defAnswer)
 		line = strings.TrimSpace(line)
-		if err != nil || len(line) == 0 { // io.EOF
+		if err != nil {
+			fmt.Println(err.Error())
+			os.Exit(0)
+		}
+		if len(line) == 0 { // io.EOF
 			continue
 		} else {
 			return line

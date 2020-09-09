@@ -239,7 +239,7 @@ func initBundle(env Env) {
 }
 
 func fetchBundle(env Env) {
-	code, rspbin, _, err := req(env, "api/json", []byte{})
+	code, rspbin, _, err := req(env, "POST", "api/json", []byte{})
 	if err != nil {
 		fmt.Printf("error: %s\n", err)
 		return
@@ -256,7 +256,7 @@ func fetchBundle(env Env) {
 		panic(err)
 	}
 	for i, view := range rsp.Views {
-		code, vrspbin, _, err := req(env, "view/"+view.Name+"/api/json", []byte{})
+		code, vrspbin, _, err := req(env, "POST", "view/"+view.Name+"/api/json", []byte{})
 		if err != nil {
 			panic(err)
 		}
@@ -281,8 +281,10 @@ func updateCache(env Env, bundle *Bundle) {
 		fmt.Println("failed to Marshal cache info, ", err.Error())
 	}
 }
-
-func req(env Env, path string, body []byte) (int, []byte, map[string][]string, error) {
+func reqPOST(env Env, method, path string, body []byte) (int, []byte, map[string][]string, error) {
+	return req(env, method, path, body)
+}
+func req(env Env, method, path string, body []byte) (int, []byte, map[string][]string, error) {
 	base_url := env.Url
 	if base_url[len(base_url)-1:] != "/" {
 		base_url = base_url + "/"
@@ -293,7 +295,7 @@ func req(env Env, path string, body []byte) (int, []byte, map[string][]string, e
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 	client := &http.Client{Transport: tr}
-	request, err := http.NewRequest("POST", url, strings.NewReader(string(body)))
+	request, err := http.NewRequest(method, url, strings.NewReader(string(body)))
 	if err != nil {
 		return 0, nil, nil, err
 	}

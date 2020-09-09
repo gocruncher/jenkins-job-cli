@@ -102,13 +102,16 @@ func run_job(name string) {
 		defVal := pd.DefaultParameterValue.Value
 		curChoices := pd.Choices
 		for {
-			rl, err := readline.New(chalk.Underline.TextStyle(pd.Name) + ": ")
+			rl, err := NewReadLine(chalk.Underline.TextStyle(pd.Name)+": ", pd.Choices)
 			defer rl.Close()
 			if err != nil {
 				panic(err)
 			}
+			if pd.Type == "ChoiceParameterDefinition" {
+				defVal = ""
+			}
 			line, err := rl.ReadlineWithDefault(defVal)
-
+			line = strings.TrimSpace(line)
 			if err != nil { // io.EOF
 				os.Exit(1)
 			}

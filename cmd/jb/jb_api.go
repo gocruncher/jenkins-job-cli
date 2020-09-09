@@ -34,7 +34,7 @@ func DelEnv(name EName) error {
 }
 
 func Check(env Env) error {
-	code, rspbin, _, err := req(env, "api/json", []byte{})
+	code, rspbin, _, err := req(env, "GET", "api/json", []byte{})
 	if err != nil {
 		return err
 	}
@@ -147,7 +147,7 @@ func GetJobInfo(env Env, jobName string) (error, *JobInfo) {
 	}
 	var fetchJobInfo = func() (error, JobInfo) {
 		var ji JobInfo
-		code, rsp, _, err := req(env, "job/"+jobName+"/api/json", []byte{})
+		code, rsp, _, err := req(env, "POST", "job/"+jobName+"/api/json", []byte{})
 		if err != nil {
 			panic(err)
 		}
@@ -214,7 +214,7 @@ func GetJobInfo(env Env, jobName string) (error, *JobInfo) {
 //
 
 func GetBuildInfo(env Env, job string, id int) (*BuildInfo, error) {
-	code, rsp, _, err := req(env, "job/"+job+"/"+strconv.Itoa(id)+"/api/json", []byte{})
+	code, rsp, _, err := req(env, "POST", "job/"+job+"/"+strconv.Itoa(id)+"/api/json", []byte{})
 	if err != nil {
 		panic(err)
 	}
@@ -230,7 +230,7 @@ func GetBuildInfo(env Env, job string, id int) (*BuildInfo, error) {
 }
 
 func GetLastSuccessfulBuildInfo(env Env, job string) (*BuildInfo, error) {
-	code, rsp, _, err := req(env, "job/"+job+"/lastSuccessfulBuild/api/json", []byte{})
+	code, rsp, _, err := req(env, "POST", "job/"+job+"/lastSuccessfulBuild/api/json", []byte{})
 	if err != nil {
 		panic(err)
 	}
@@ -250,7 +250,7 @@ func Build(env Env, job string, query string) string {
 	if len(query) > 0 {
 		target = "/buildWithParameters?" + query
 	}
-	code, rsp, headers, err := req(env, "job/"+job+target, []byte{})
+	code, rsp, headers, err := req(env, "POST", "job/"+job+target, []byte{})
 	if err != nil {
 		panic(err)
 	}
@@ -264,10 +264,10 @@ func Build(env Env, job string, query string) string {
 }
 
 func CancelQueue(env Env, id int) {
-	req(env, "queue/cancelItem?id="+strconv.Itoa(id), []byte{})
+	req(env, "POST", "queue/cancelItem?id="+strconv.Itoa(id), []byte{})
 }
 func CancelJob(env Env, job string, id int) (string, error) {
-	code, _, _, err := req(env, "job/"+job+"/"+strconv.Itoa(id)+"/stop", []byte{})
+	code, _, _, err := req(env, "POST", "job/"+job+"/"+strconv.Itoa(id)+"/stop", []byte{})
 	if err != nil {
 		panic(err)
 	}
@@ -283,7 +283,7 @@ func CancelJob(env Env, job string, id int) (string, error) {
 
 func Console(env Env, job string, id int, start string) (string, string, error) {
 	//web-rpm-build-manual/149/logText/progressiveHtml
-	code, rsp, h, err := req(env, "job/"+job+"/"+strconv.Itoa(id)+"/logText/progressiveHtml", []byte("start="+start))
+	code, rsp, h, err := req(env, "POST", "job/"+job+"/"+strconv.Itoa(id)+"/logText/progressiveHtml", []byte("start="+start))
 	if err != nil {
 		return "", "", err
 	}
@@ -296,7 +296,7 @@ func Console(env Env, job string, id int, start string) (string, string, error) 
 
 func GetQueueInfo(env Env, id int) (error, QueueInfo) {
 	var queueInfo QueueInfo
-	code, rsp, _, err := req(env, "/queue/item/"+strconv.Itoa(id)+"/api/json", []byte{})
+	code, rsp, _, err := req(env, "POST", "/queue/item/"+strconv.Itoa(id)+"/api/json", []byte{})
 	if err != nil {
 		panic(err)
 	}
@@ -312,7 +312,7 @@ func GetQueueInfo(env Env, id int) (error, QueueInfo) {
 
 func GetQueues(env Env) Queues {
 	var queues Queues
-	code, rsp, _, err := req(env, "/queue/api/json", []byte{})
+	code, rsp, _, err := req(env, "POST", "/queue/api/json", []byte{})
 	if err != nil {
 		panic(err)
 	}

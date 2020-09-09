@@ -20,8 +20,13 @@ func init() {
 func del(args []string) {
 	if len(args) == 0 {
 		fmt.Println("which Jenkins should be removed?")
+		choices := []string{}
+		for _, e := range jb.GetEnvs() {
+			choices = append(choices, string(e.Name))
+		}
 		for {
-			name := getAnswer("name: ", "")
+
+			name := getAnswer("name: ", "", choices)
 			if err := jb.DelEnv(jb.EName(name)); err != nil {
 				fmt.Println(err)
 				continue

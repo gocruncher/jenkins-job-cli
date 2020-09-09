@@ -27,20 +27,20 @@ func set(args []string) {
 	fmt.Println("please specify requires parameters:")
 	var name string
 	if len(args) == 0 {
-		name = getAnswer("name(test,stage, etc.): ", "")
+		name = getBaseAnswer("name(test,stage, etc.): ", "")
 
 	} else {
 		name = args[0]
 	}
 	_, env := jb.GetEnv(name)
 
-	url := getAnswer("url: ", env.Url)
+	url := getBaseAnswer("url: ", env.Url)
 	var authtype string
 	for {
 		fmt.Println(`Choose an option from the following list:
 	n - No authorization
 	a - API token`, authtype)
-		authtype = getAnswer("authorization type: ", string(env.Type))
+		authtype = getAnswer("authorization type: ", string(env.Type), []string{"n", "a"})
 
 		if authtype == "n" || authtype == "a" {
 			break
@@ -50,8 +50,8 @@ func set(args []string) {
 	env.Name = jb.EName(name)
 	env.Type = jb.EType(authtype)
 	if authtype == "a" {
-		env.Login = getAnswer("login: ", env.Login)
-		env.Secret = getAnswer("token: ", env.Secret)
+		env.Login = getBaseAnswer("login: ", env.Login)
+		env.Secret = getBaseAnswer("token: ", env.Secret)
 
 	}
 	fmt.Println("checking...")

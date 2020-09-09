@@ -7,14 +7,44 @@ import (
 	"strings"
 )
 
-func getAnswer(question string, defAnswer string) string {
+func filterInput(r rune) (rune, bool) {
+	switch r {
+	// block CtrlZ feature
+	case readline.CharCtrlZ:
+		return 3, true
+	}
+	return r, true
+}
+func getBaseAnswer(question string, defAnswer string) string {
+	return getAnswer(question, defAnswer, []string{})
+}
+func NewReadLine(question string, choices []string) (*readline.Instance, error) {
+	completer := []readline.PrefixCompleterInterface{}
+	for _, choice := range choices {
+		completer = append(completer, readline.PcItem(choice))
+	}
+	rl, err := readline.NewEx(&readline.Config{
+		Prompt:              question,
+		HistoryFile:         "/tmp/readline.tmp",
+		AutoComplete:        readline.NewPrefixCompleter(completer...),
+		InterruptPrompt:     "^C",
+		EOFPrompt:           "exit",
+		HistorySearchFold:   true,
+		FuncFilterInputRune: filterInput,
+	})
+	return rl, err
+}
+func getAnswer(question string, defAnswer string, choices []string) string {
+
 	for {
-		rl, err := readline.New(question)
+		rl, err := NewReadLine(question, choices)
 		defer rl.Close()
+
 		if err != nil {
 			panic(err)
 		}
 		line, err := rl.ReadlineWithDefault(defAnswer)
+		fmt.Println("entered: ", line)
 		line = strings.TrimSpace(line)
 		if err != nil {
 			fmt.Println(err.Error())

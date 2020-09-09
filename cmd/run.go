@@ -300,49 +300,41 @@ func watchTheJob(env jb.Env, name string, number int, keyCh chan string) error {
 		if err != nil || cursor == nextCursor {
 			return cursor
 		}
-		j := 1
-		for {
-			lines := strings.Split(output, "\n")
-
-			count := len(lines)
-			if count > 50 {
-				count = 50
+		lines := strings.Split(output, "\n")
+		count := len(lines)
+		if count > 50 {
+			count = 50
+		}
+		for i := count; i >= 1; i-- {
+			rline := []rune(string(lines[len(lines)-i]))
+			if err != nil { // io.EOF
+				break
 			}
-			for i := count; i >= 1; i-- {
-				rline := []rune(string(lines[len(lines)-i]))
-				if err != nil { // io.EOF
+			j := 0
+			size := 100
+			for {
+				var fline string
+				s := j * size
+				e := (j + 1) * size
+				if len(rline) > e {
+					fline = string(rline[s:e])
+				} else {
+					fline = string(rline[s:len(rline)])
+				}
+				if len(strings.TrimSpace(fline)) > 0 {
+					chMsg <- fline
+					time.After(40 * time.Millisecond)
+
+				}
+				j++
+				if len(rline) <= e || len(rline) > 10*size {
 					break
 				}
-				j := 0
-				size := 100
-				for {
-					var fline string
-					s := j * size
-					e := (j + 1) * size
-					if len(rline) > e {
-						fline = string(rline[s:e])
-					} else {
-						fline = string(rline[s:len(rline)])
-					}
-					if len(strings.TrimSpace(fline)) > 0 {
-						chMsg <- fline
-						time.After(40 * time.Millisecond)
-
-					}
-					j++
-					if len(rline) <= e || len(rline) > 10*size {
-						break
-					}
-				}
 			}
-			break
-			j++
-			//time.Sleep(4*time.Millisecond)
 		}
 		return nextCursor
 	}
 	for t > -1 {
-
 		if t%5 == 0 && t > 1 {
 			curBuild, err := jb.GetBuildInfo(env, name, number)
 			if err != nil {
@@ -357,8 +349,17 @@ func watchTheJob(env jb.Env, name string, number int, keyCh chan string) error {
 			} else {
 				if !curBuild.Building {
 					if curBuild.Result == "SUCCESS" {
+						fmt.Println("finish")
+						k := 0
 						for {
+							k++
+							time.Sleep(time.Second * 2)
 							nc := handle(cursor)
+							if k > 5 {
+								fmt.Println()
+								fmt.Println("nc", nc, cursor)
+								fmt.Println()
+							}
 							if nc == cursor {
 								break
 							}

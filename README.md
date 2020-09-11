@@ -8,49 +8,54 @@ any Jenkins job, view will be like this:
 ## Installation
  
 ```
-    brew tap gocruncher/tap
-    brew install jb
+brew tap gocruncher/tap
+brew install jb
 ```
 
 ## Quick start 
 
 ### Configure Access to Multiple Jenkins.
 
-No authorization:
 ```
-    jb set dev_jenkins --url "https://myjenkins.com" --login admin --token 11aa0926784999dab5  
+jb set dev_jenkins --url "https://myjenkins.com" --login admin --token 11aa0926784999dab5  
 ```
-
-With authorization:
-```
-    jb set dev_jenkins --url "https://myjenkins.com" --login admin --token 11aa0926784999dab5  
-```
-
 where the token is available in your personal configuration page of the Jenkins. Click your name on the top right corner on every page, then click "Configure" to see your API token. (The URL $root/me/configure is a good shortcut.) You can also change your API token from here.
+In case, when Jenkins is available without authorization:
+```
+jb set dev_jenkins --url "https://myjenkins.com"  
+```
+
+Or just run the following command in dialog execution mode:
+```
+jb set dev_jenkins
+```
 
 
-### Enabling shell autocompletion
+### Shell autocompletion
 
 you can enable shell autocompletion for convenient work. To do this, run following:
 ```
-   # for zsh completion:
-   echo 'source <(jb completion zsh)' >>~/.zshrc
+# for zsh completion:
+echo 'source <(jb completion zsh)' >>~/.zshrc
 
-   # for bash completion:
-   echo 'source <(jb completion bash)' >>~/.bashrc
+# for bash completion:
+echo 'source <(jb completion bash)' >>~/.bashrc
 ```
-if this does not work for some reason, try following command that might help you to figure out what is wrong 
+if this does not work for some reason, try following command that might help you to figure out what is wrong: 
 ```
-    jb completion check
+jb completion check
 ```
 
 ### Usage
 ```
-    jb run backend-app #run backend-app job in the current Jenkis  
+# run backend-app job in the current Jenkis 
+jb run backend-app  
 
-    jb -n PROD #run frontent #run frontend job in the PROD Jenkins
+# run frontend job in the PROD Jenkins
+jb -n PROD run frontend
 
-    jb use PROD #makes a specific Jenkins name by default 
+# makes a specific Jenkins name by default
+jb use PROD  
 ```
 
 ## Futures

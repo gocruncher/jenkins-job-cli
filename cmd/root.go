@@ -107,6 +107,7 @@ enable shell autocompletion for convenient work. To do this, run following:
 
    # for bash completion:
    echo 'source <(jb completion bash)' >>~/.bashrc
+
 if this does not work for some reason, try calling "jb completion check" command that might help you to figure out what is wrong
 
 `,
@@ -116,10 +117,17 @@ if this does not work for some reason, try calling "jb completion check" command
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	//	Run: func(cmd *cobra.Command, args []string) { },
-	Example: `  # Start 'app-build' job in the current jenkins
+	Example: `  # Configure Access to the Jenkins
+  jb set dev-jenkins
+
+  # Start 'app-build' job in the current Jenkins
   jb run app-build
-  # Start 'web-build' job in jenkins named prod
-  jb run -e prod web-build`,
+
+  # Start 'web-build' job in Jenkins named prod
+  jb run -n prod web-build
+
+  # makes a specific Jenkins name by default
+  jb use PROD  `,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

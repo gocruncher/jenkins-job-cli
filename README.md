@@ -14,12 +14,13 @@ brew install jb
 
 ## Quick start 
 
-### Configure Access to Multiple Jenkins.
+### Configure Access to Multiple Jenkins
 
 ```
 jb set dev_jenkins --url "https://myjenkins.com" --login admin --token 11aa0926784999dab5  
 ```
-where the token is available in your personal configuration page of the Jenkins. Click your name on the top right corner on every page, then click "Configure" to see your API token. (The URL $root/me/configure is a good shortcut.) You can also change your API token from here.
+where the token is available in your personal configuration page of the Jenkins. Click your name on the top right corner on every page, then click "Configure" to see your API token. 
+
 In case, when Jenkins is available without authorization:
 ```
 jb set dev_jenkins --url "https://myjenkins.com"  
@@ -33,7 +34,7 @@ jb set dev_jenkins
 
 ### Shell autocompletion
 
-you can enable shell autocompletion for convenient work. To do this, run following:
+As a recommendation, you can enable shell autocompletion for convenient work. To do this, run following:
 ```
 # for zsh completion:
 echo 'source <(jb completion zsh)' >>~/.zshrc

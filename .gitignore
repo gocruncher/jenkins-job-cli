@@ -2,8 +2,8 @@
 .idea
 .gobuild
 ./cache
-vendor/
-samples/
-release/
+/vendor/
+/release/
 todo
 jbuilder
+/trush/

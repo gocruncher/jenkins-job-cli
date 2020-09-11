@@ -5,29 +5,44 @@ any Jenkins job, view will be like this:
 
 ![terminal demo](assets/demo.gif)
 
-## Installation
- 
+## Install
+Fetch the [latest release](https://github.com/gocruncher/jbuilder/releases) for your platform:
+
+#### Linux
+
+```bash
+sudo wget https://github.com/gocruncher/jbuilder/releases/download/v1.0.0/jbuilder-1.0.0-linux-amd64 -O /usr/local/bin/jb
+sudo chmod +x /usr/local/bin/jb
 ```
+
+#### OS X brew
+
+```bash
 brew tap gocruncher/tap
 brew install jb
+```
+#### OS X bash
+```bash
+sudo curl -Lo /usr/local/bin/jb https://github.com/gocruncher/jbuilder/releases/download/v1.0.0/jbuilder-1.0.0-darwin-amd64
+sudo chmod +x /usr/local/bin/jb
 ```
 
 ## Quick start 
 
 ### Configure Access to Multiple Jenkins
 
-```
+```bash
 jb set dev_jenkins --url "https://myjenkins.com" --login admin --token 11aa0926784999dab5  
 ```
 where the token is available in your personal configuration page of the Jenkins. Click your name on the top right corner on every page, then click "Configure" to see your API token. 
 
 In case, when Jenkins is available without authorization:
-```
+```bash
 jb set dev_jenkins --url "https://myjenkins.com"  
 ```
 
 or just run the following command in dialog execution mode:
-```
+```bash
 jb set dev_jenkins
 ```
 
@@ -35,7 +50,7 @@ jb set dev_jenkins
 ### Shell autocompletion
 
 As a recommendation, you can enable shell autocompletion for convenient work. To do this, run following:
-```
+```bash
 # for zsh completion:
 echo 'source <(jb completion zsh)' >>~/.zshrc
 
@@ -43,12 +58,12 @@ echo 'source <(jb completion zsh)' >>~/.zshrc
 echo 'source <(jb completion bash)' >>~/.bashrc
 ```
 if this does not work for some reason, try following command that might help you to figure out what is wrong: 
-```
+```bash
 jb completion check
 ```
 
 ### Usage
-```
+```bash
 # run backend-app job in the current Jenkis 
 jb run backend-app  
 

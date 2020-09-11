@@ -304,7 +304,17 @@ func watchTheJob(env jb.Env, name string, number int, keyCh chan string) error {
 	go barHandler(jobUrl, keyCh, chMsg, finishCh, &wg)
 	defer close(closeCh)
 	defer wg.Wait()
-	handle := func(cursor string) string {
+	dotick := func() {
+		ctime := getTime()
+		dtime := ctime - stime
+		newTicks := int(float64(dtime) / float64(lastBuild.Duration) * 100)
+		for ticks < newTicks && ticks < 99 {
+			chMsg <- ""
+			ticks++
+		}
+	}
+
+	handle := func(cursor string, sleepTime int) string {
 		output, nextCursor, err := jb.Console(env, name, number, cursor)
 		if err != nil || cursor == nextCursor {
 			return cursor
@@ -332,7 +342,8 @@ func watchTheJob(env jb.Env, name string, number int, keyCh chan string) error {
 				}
 				if len(strings.TrimSpace(fline)) > 0 {
 					chMsg <- fline
-					time.After(40 * time.Millisecond)
+					time.Sleep(time.Duration(sleepTime) * time.Millisecond)
+					dotick()
 
 				}
 				j++
@@ -361,8 +372,7 @@ func watchTheJob(env jb.Env, name string, number int, keyCh chan string) error {
 					k := 0
 					for {
 						k++
-						time.Sleep(time.Second * 2)
-						nc := handle(cursor)
+						nc := handle(cursor, 1)
 						if k > 5 {
 							fmt.Println()
 							fmt.Println("nc", nc, cursor)
@@ -388,21 +398,17 @@ func watchTheJob(env jb.Env, name string, number int, keyCh chan string) error {
 				}
 			}
 		}
-		ncursor := handle(cursor)
+		ncursor := handle(cursor, 100)
 		if ncursor != cursor {
 			cursor = ncursor
+			dotick()
 			ctime := getTime()
 			dtime := ctime - stime
-			newTicks := int(float64(dtime) / float64(lastBuild.Duration) * 100)
-			for ticks < newTicks && ticks < 99 {
-				chMsg <- ""
-				ticks++
-			}
-			if dtime < 500 {
-				time.Sleep(time.Duration(500-dtime) * time.Millisecond)
+			if dtime < 10 {
+				time.Sleep(time.Duration(10-dtime) * time.Millisecond)
 			}
 		} else {
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(10 * time.Millisecond)
 		}
 	}
 }

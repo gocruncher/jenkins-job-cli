@@ -11,7 +11,7 @@ Fetch the [latest release](https://github.com/gocruncher/jbuilder/releases) for 
 #### Linux
 
 ```bash
-sudo wget https://github.com/gocruncher/jbuilder/releases/download/v1.0.0/jbuilder-1.0.0-linux-amd64 -O /usr/local/bin/jb
+sudo wget https://github.com/gocruncher/jbuilder/releases/download/v1.0.1/jbuilder-1.0.1-linux-amd64 -O /usr/local/bin/jb
 sudo chmod +x /usr/local/bin/jb
 ```
 
@@ -23,7 +23,7 @@ brew install jb
 ```
 #### OS X bash
 ```bash
-sudo curl -Lo /usr/local/bin/jb https://github.com/gocruncher/jbuilder/releases/download/v1.0.0/jbuilder-1.0.0-darwin-amd64
+sudo curl -Lo /usr/local/bin/jb https://github.com/gocruncher/jbuilder/releases/download/v1.0.1/jbuilder-1.0.1-darwin-amd64
 sudo chmod +x /usr/local/bin/jb
 ```
 

@@ -6,6 +6,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var URL string
+var login string
+var token string
+
 func init() {
 	setCmd := &cobra.Command{
 		Use: `set NAME
@@ -19,6 +23,9 @@ Specifying a NAME that already exists will merge new fields on top of existing v
 		},
 		Args: cobra.ExactArgs(1),
 	}
+	setCmd.Flags().StringVarP(&URL, "url", "u", "", "URL of the Jenkins")
+	setCmd.Flags().StringVarP(&login, "login", "l", "", "login")
+	setCmd.Flags().StringVarP(&token, "token", "t", "", "API token")
 
 	rootCmd.AddCommand(setCmd)
 }
@@ -33,26 +40,41 @@ func set(args []string) {
 		name = args[0]
 	}
 	_, env := jb.GetEnv(name)
+	url := URL
+	if url == "" {
+		url = getBaseAnswer("url: ", env.Url)
+	}
 
-	url := getBaseAnswer("url: ", env.Url)
 	var authtype string
-	for {
-		fmt.Println(`Choose an option from the following list:
+	if URL != "" {
+		authtype = "a"
+	} else {
+		for {
+			fmt.Println(`Choose an option from the following list:
 	n - No authorization
 	a - API token`, authtype)
-		authtype = getAnswer("authorization type: ", string(env.Type), []string{"n", "a"})
+			authtype = getAnswer("authorization type: ", string(env.Type), []string{"n", "a"})
 
-		if authtype == "n" || authtype == "a" {
-			break
+			if authtype == "n" || authtype == "a" {
+				break
+			}
 		}
 	}
+
 	env.Url = url
 	env.Name = jb.EName(name)
 	env.Type = jb.EType(authtype)
 	if authtype == "a" {
-		env.Login = getBaseAnswer("login: ", env.Login)
-		env.Secret = getBaseAnswer("token: ", env.Secret)
-
+		if login == "" {
+			env.Login = getBaseAnswer("login: ", env.Login)
+		} else {
+			env.Login = getBaseAnswer("login: ", login)
+		}
+		if token == "" {
+			env.Secret = getBaseAnswer("token: ", env.Secret)
+		} else {
+			env.Secret = getBaseAnswer("token: ", token)
+		}
 	}
 	fmt.Println("checking...")
 	err := jb.Check(env)

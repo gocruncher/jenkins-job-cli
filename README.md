@@ -14,7 +14,7 @@ any Jenkins job, view will be like this:
 
 ## Quick start 
 
-#### Configure Access to Multiple Jenkins.
+### Configure Access to Multiple Jenkins.
 
 No authorization:
 ```
@@ -29,7 +29,7 @@ With authorization:
 where the token is available in your personal configuration page of the Jenkins. Click your name on the top right corner on every page, then click "Configure" to see your API token. (The URL $root/me/configure is a good shortcut.) You can also change your API token from here.
 
 
-#### Enabling shell autocompletion
+### Enabling shell autocompletion
 
 you can enable shell autocompletion for convenient work. To do this, run following:
 ```
@@ -44,7 +44,7 @@ if this does not work for some reason, try following command that might help you
     jb completion check
 ```
 
-#### Usage
+### Usage
 ```
     jb run backend-app #run backend-app job in the current Jenkis  
 

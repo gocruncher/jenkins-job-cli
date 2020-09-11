@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 var homeDir string
@@ -206,6 +207,26 @@ func initConfig() {
 		return
 	}
 	err = yaml.Unmarshal(data, &config)
+	changed := false
+	for {
+	Repeat:
+		for i, env1 := range config.Envs {
+			for j, env2 := range config.Envs {
+				if env1.Name == env2.Name && i != j {
+					config.Envs[len(config.Envs)-1], config.Envs[j] = config.Envs[j], config.Envs[len(config.Envs)-1]
+					config.Envs = config.Envs[:len(config.Envs)-1]
+					changed = true
+					break Repeat
+				}
+			}
+		}
+		if changed {
+			SetConf()
+			changed = false
+		} else {
+			break
+		}
+	}
 	if err != nil {
 		log.Fatalf("error: %v", err)
 	}
@@ -229,23 +250,28 @@ func initBundle(env Env) {
 	cachebin, err := ioutil.ReadFile(homeDir + cacheFile + "." + string(env.Name))
 	err = json.Unmarshal(cachebin, &bundle)
 	if err != nil {
-		fetchBundle(env)
+		fetchBundle(env, false)
 	} else {
 		mutex.Lock()
 		defer mutex.Unlock()
 		bundles = append(bundles, &bundle)
-		go fetchBundle(env)
+		go fetchBundle(env, true)
 	}
 }
 
-func fetchBundle(env Env) {
+func fetchBundle(env Env, async bool) {
 	code, rspbin, _, err := req(env, "POST", "api/json", []byte{})
 	if err != nil {
-		fmt.Printf("error: %s\n", err)
+		if !async {
+			fmt.Printf("error: %s\n", err)
+		}
 		return
 	}
 	if code != 200 {
-		fmt.Println("failed to get job details:code " + strconv.Itoa(code) + " " + env.Login)
+		if !async {
+			fmt.Println("failed to get job details:code " + strconv.Itoa(code) + " " + env.Login)
+		}
+
 		return
 	}
 	var rsp struct {
@@ -294,7 +320,7 @@ func req(env Env, method, path string, body []byte) (int, []byte, map[string][]s
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
-	client := &http.Client{Transport: tr}
+	client := &http.Client{Transport: tr, Timeout: time.Second * 30}
 	request, err := http.NewRequest(method, url, strings.NewReader(string(body)))
 	if err != nil {
 		return 0, nil, nil, err

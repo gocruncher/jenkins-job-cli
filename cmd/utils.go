@@ -44,7 +44,6 @@ func getAnswer(question string, defAnswer string, choices []string) string {
 			panic(err)
 		}
 		line, err := rl.ReadlineWithDefault(defAnswer)
-		fmt.Println("entered: ", line)
 		line = strings.TrimSpace(line)
 		if err != nil {
 			fmt.Println(err.Error())

@@ -26,9 +26,6 @@ To configure your bash shell to load completions for each session add to your ba
 # ~/.bashrc or ~/.profile
 . <(bitbucket completion)
 `,
-		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("hey ")
-		},
 	}
 	var completionCmdBash = &cobra.Command{
 		Use:   "bash",
@@ -64,10 +61,10 @@ To configure your bash shell to load completions for each session add to your ba
 	}
 	var completionCmdCheck = &cobra.Command{
 		Use:   "check",
-		Short: "Checks you OS completions settings",
-		Long:  `Checks you OS completions settings`,
+		Short: "Checks your OS completions settings",
+		Long:  `Checks your OS completions settings`,
 		Run: func(cmd *cobra.Command, args []string) {
-			check()
+			checkCompletion()
 		},
 	}
 	completionCmd.AddCommand(completionCmdBash)
@@ -76,7 +73,7 @@ To configure your bash shell to load completions for each session add to your ba
 	rootCmd.AddCommand(completionCmd)
 }
 
-func check() {
+func checkCompletion() {
 	shell := os.Getenv("SHELL")
 	if strings.Contains(shell, "zsh") {
 		checkZsh()

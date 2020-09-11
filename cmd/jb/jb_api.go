@@ -110,13 +110,17 @@ func SetConf() {
 }
 
 func SetEnv(env Env) {
+	added := false
 	for i, e := range config.Envs {
 		if e.Name == env.Name {
 			config.Envs[i] = env
+			added = true
 			break
 		}
 	}
-	config.Envs = append(config.Envs, env)
+	if !added {
+		config.Envs = append(config.Envs, env)
+	}
 	SetConf()
 
 }
@@ -149,7 +153,7 @@ func GetJobInfo(env Env, jobName string) (error, *JobInfo) {
 		var ji JobInfo
 		code, rsp, _, err := req(env, "POST", "job/"+jobName+"/api/json", []byte{})
 		if err != nil {
-			panic(err)
+			return err, ji
 		}
 		if code != 200 {
 			return ErrNoJob, ji
@@ -245,21 +249,21 @@ func GetLastSuccessfulBuildInfo(env Env, job string) (*BuildInfo, error) {
 	return &bi, nil
 }
 
-func Build(env Env, job string, query string) string {
+func Build(env Env, job string, query string) (error, string) {
 	target := "/build"
 	if len(query) > 0 {
 		target = "/buildWithParameters?" + query
 	}
 	code, rsp, headers, err := req(env, "POST", "job/"+job+target, []byte{})
 	if err != nil {
-		panic(err)
+		return err, ""
 	}
 	if code != 201 {
-		panic(errors.New("failed to start job details,code" + strconv.Itoa(code) + ", " + string(rsp)))
+		return errors.New("failed to start job details,code" + strconv.Itoa(code) + ", " + string(rsp)), ""
 	}
 	location := headers["Location"][0]
 	splitedUrl := strings.Split(location, "/")
-	return splitedUrl[len(splitedUrl)-2]
+	return nil, splitedUrl[len(splitedUrl)-2]
 
 }
 

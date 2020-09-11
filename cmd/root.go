@@ -98,8 +98,8 @@ const defaultBoilerPlate = `
 var rootCmd = &cobra.Command{
 	Use:   "jb",
 	Short: "jb - simple command line utility which just runs any jenkins job",
-	Long: `jbuilder is simple command line utility which just runs 
-any jenkins job. Before you start, please configure access 
+	Long: `jbuilder is a simple command-line utility which just runs
+any Jenkins job. Before you start, please configure access to
 to the Jenkins service using "jb set" command. After that, you can 
 enable shell autocompletion for convenient work. To do this, run following:
    # for zsh completion:	

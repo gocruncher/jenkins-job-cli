@@ -16,6 +16,7 @@ require (
 	github.com/gobuffalo/envy v1.9.0 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
 	github.com/julienroland/keyboard-termbox v0.0.0-20170507181043-8367444ed68b // indirect
+	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/magiconair/properties v1.8.1
 	github.com/mattn/go-isatty v0.0.12 // indirect
@@ -26,6 +27,8 @@ require (
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/nsf/termbox-go v0.0.0-20200418040025-38ba6e5628f1 // indirect
 	github.com/pelletier/go-toml v1.8.0 // indirect
+	github.com/progrium/gh-release v2.2.1+incompatible // indirect
+	github.com/progrium/go-basher v0.0.0-20200507184539-7aca7038b313 // indirect
 	github.com/pwaller/keyboard v0.0.0-20121011105959-f32bd761b121 // indirect
 	github.com/sirupsen/logrus v1.2.0 // indirect
 	github.com/smartystreets/assertions v1.1.1 // indirect

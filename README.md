@@ -26,7 +26,7 @@ In case, when Jenkins is available without authorization:
 jb set dev_jenkins --url "https://myjenkins.com"  
 ```
 
-Or just run the following command in dialog execution mode:
+or just run the following command in dialog execution mode:
 ```
 jb set dev_jenkins
 ```
@@ -60,7 +60,7 @@ jb use PROD
 ```
 
 ## Futures
-- cancellation job (^C key)
+- cancellation job (Ctrl+C key)
 - resize of the output (just press enter key)
 - output of child jobs   
 

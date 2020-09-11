@@ -1,7 +1,7 @@
 # Jbuilder
 
 Jbuilder is a simple command-line utility which just runs
-any Jenkins job, view will be like this:
+any Jenkins job, an execution will be like this:
 
 ![terminal demo](assets/demo.gif)
 
@@ -27,7 +27,7 @@ sudo curl -Lo /usr/local/bin/jb https://github.com/gocruncher/jbuilder/releases/
 sudo chmod +x /usr/local/bin/jb
 ```
 
-## Quick start 
+## Getting Started 
 
 ### Configure Access to Multiple Jenkins
 
@@ -62,13 +62,16 @@ if this does not work for some reason, try following command that might help you
 jb completion check
 ```
 
-### Usage
+### Examples
 ```bash
-# run backend-app job in the current Jenkis 
-jb run backend-app  
+# Configure Access to the Jenkins
+jb set dev-jenkins
 
-# run frontend job in the PROD Jenkins
-jb -n PROD run frontend
+# Start 'app-build' job in the current Jenkins
+jb run app-build
+
+# Start 'web-build' job in Jenkins named prod
+jb run -n prod web-build
 
 # makes a specific Jenkins name by default
 jb use PROD  

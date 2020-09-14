@@ -91,3 +91,6 @@ jb use PROD
 ## Todos
 - add authorization by login/pass and through the RSA key
 - support of a terminal window resizing
+
+## License
+`Jbuilder` is open-sourced software licensed under the [MIT](LICENSE) license.

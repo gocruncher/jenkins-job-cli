@@ -1,7 +1,7 @@
-# Jbuilder
+#  Runs Jenkins job from the Command Line 
 <meta name="google-site-verification" content="Wl2WZRolJ6omFNTQRguTy0GRQU41taSDq20n4Qgz05c" />
 
-The utility runs a Jenkins build/job from the Command Line/Terminal.
+The utility starts a Jenkins build/job from the Command Line/Terminal.
 An execution will be like this:
 
 ![terminal demo](assets/demo.gif)

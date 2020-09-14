@@ -35,7 +35,7 @@ sudo chmod +x /usr/local/bin/jb
 ```bash
 jb set dev_jenkins --url "https://myjenkins.com" --login admin --token 11aa0926784999dab5  
 ```
-where the token is available in your personal configuration page of the Jenkins. Click your name on the top right corner on every page, then click "Configure" to see your API token. 
+where the token is available in your personal configuration page of the Jenkins. Go to the Jenkins Web Interface and click your name on the top right corner on every page, then click "Configure" to see your API token. 
 
 In case, when Jenkins is available without authorization:
 ```bash

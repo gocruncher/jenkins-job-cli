@@ -1,6 +1,6 @@
 # Jbuilder
 
-The utility runs a Jenkins Build/Job from the Command Line/Terminal?
+The utility runs a Jenkins build/job from the Command Line/Terminal.
 An execution will be like this:
 
 ![terminal demo](assets/demo.gif)

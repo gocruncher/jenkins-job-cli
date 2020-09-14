@@ -40,9 +40,11 @@ func set(args []string) {
 		name = args[0]
 	}
 	_, env := jb.GetEnv(name)
-	url := URL
-	if url == "" {
-		url = getBaseAnswer("url: ", env.Url)
+	if URL == "" {
+		env.Url = getBaseAnswer("url: ", env.Url)
+	} else {
+		env.Url = URL
+
 	}
 
 	var authtype string
@@ -60,20 +62,19 @@ func set(args []string) {
 			}
 		}
 	}
-
-	env.Url = url
 	env.Name = jb.EName(name)
 	env.Type = jb.EType(authtype)
 	if authtype == "a" {
 		if login == "" {
 			env.Login = getBaseAnswer("login: ", env.Login)
 		} else {
-			env.Login = getBaseAnswer("login: ", login)
+			env.Login = login
+
 		}
 		if token == "" {
 			env.Secret = getBaseAnswer("token: ", env.Secret)
 		} else {
-			env.Secret = getBaseAnswer("token: ", token)
+			env.Secret = token
 		}
 	}
 	fmt.Println("checking...")

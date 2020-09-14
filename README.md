@@ -1,7 +1,7 @@
 # Jbuilder
 
-Jbuilder is a simple command-line utility which just runs
-any Jenkins job, an execution will be like this:
+The utility runs a Jenkins Build/Job from the Command Line/Terminal?
+An execution will be like this:
 
 ![terminal demo](assets/demo.gif)
 

@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/ASalimov/jbuilder/cmd/jb"
+	"github.com/gocruncher/jenkins-job-ctl/cmd/jj"
 	"github.com/spf13/cobra"
 )
 
@@ -21,13 +21,13 @@ func del(args []string) {
 	if len(args) == 0 {
 		fmt.Println("which Jenkins should be removed?")
 		choices := []string{}
-		for _, e := range jb.GetEnvs() {
+		for _, e := range jj.GetEnvs() {
 			choices = append(choices, string(e.Name))
 		}
 		for {
 
 			name := getAnswer("name: ", "", choices)
-			if err := jb.DelEnv(jb.EName(name)); err != nil {
+			if err := jj.DelEnv(jj.EName(name)); err != nil {
 				fmt.Println(err)
 				continue
 			}
@@ -35,7 +35,7 @@ func del(args []string) {
 			return
 		}
 	}
-	if err := jb.DelEnv(jb.EName(args[0])); err != nil {
+	if err := jj.DelEnv(jj.EName(args[0])); err != nil {
 		fmt.Println(err)
 	} else {
 		fmt.Println("Removed.")

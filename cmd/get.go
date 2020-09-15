@@ -17,7 +17,7 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/ASalimov/jbuilder/cmd/jb"
+	"github.com/gocruncher/jenkins-job-ctl/cmd/jj"
 	"github.com/spf13/cobra"
 	"os"
 	"regexp"
@@ -51,7 +51,7 @@ var (
 func init() {
 
 	annotation := make(map[string][]string)
-	annotation[cobra.BashCompCustom] = []string{"__jb_get_env"}
+	annotation[cobra.BashCompCustom] = []string{"__jj_get_env"}
 
 	//flag := &pflag.Flag{
 	//	Name:        "env",
@@ -64,7 +64,7 @@ func init() {
 		Short: "Display any resources(settings, jobs)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 && ENV != "" {
-				showAllJobs(jb.Init(ENV))
+				showAllJobs(jj.Init(ENV))
 				os.Exit(0)
 			}
 			if len(args) > 1 && args[0] == "compline" {
@@ -76,7 +76,7 @@ func init() {
 					s1 := strings.Split(s[i+3:], " ")
 					showJobs(strings.TrimSpace(s1[0]))
 				} else {
-					showJobs(string(jb.GetDefEnv()))
+					showJobs(string(jj.GetDefEnv()))
 				}
 				os.Exit(0)
 			}
@@ -91,7 +91,7 @@ func init() {
 	getCmd.Flags().BoolVar(&noheader, "no-headers", false, "no-headers")
 	getCmd.Flags().StringVarP(&ENV, "name", "n", "", "current Jenkins name")
 	//getCmd.Flags().StringVarP(&ENV, "env", "e", "", "")
-	//for _, env:=range jb.GetEnvs(){
+	//for _, env:=range jj.GetEnvs(){
 	//	curEnv:=env
 	//	var envCmd = &cobra.Command{
 	//		Use:   string(env.Name),
@@ -115,7 +115,7 @@ func showJobs(eName string) {
 	// Run your long running function in it's own goroutine and pass back it's
 	// response into our channel.
 	go func() {
-		env := jb.Init(eName)
+		env := jj.Init(eName)
 		showAllJobs(env)
 		ch <- struct{}{}
 	}()
@@ -135,21 +135,21 @@ func showAllEnvs() {
 	if !noheader {
 		fmt.Fprintf(w, "%s\t%s\t%s\n", "Name", "URL", "Authorization")
 	}
-	for _, e := range jb.GetEnvs() {
+	for _, e := range jj.GetEnvs() {
 		fmt.Fprintf(w, "%s\t%s\t%s\n", e.Name, e.Url, e.Type)
 	}
 	fmt.Fprintln(w)
 	w.Flush()
 }
 
-func showAllJobs(env jb.Env) {
+func showAllJobs(env jj.Env) {
 	w := new(tabwriter.Writer)
 	// Format in tab-separated columns with a tab stop of 8.
 	w.Init(os.Stdout, 0, 8, 0, '\t', 0)
 	if !noheader {
 		fmt.Fprintf(w, "%s\t%s\n", "Name", "URL")
 	}
-	for _, view := range jb.GetBundle(env).Views {
+	for _, view := range jj.GetBundle(env).Views {
 		//fmt.Printf("views: %+v",view)
 		for _, j := range view.Jobs {
 			fmt.Fprintf(w, "%s\t%s\n", j.Name, j.URL)

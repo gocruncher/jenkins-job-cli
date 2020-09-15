@@ -1,4 +1,4 @@
-package jb
+package jj
 
 import (
 	"crypto/tls"
@@ -30,7 +30,7 @@ var ErrNoJob = errors.New("no job")
 
 func init() {
 	homeDir, _ = os.UserHomeDir()
-	homeDir = homeDir + "/.jb/"
+	homeDir = homeDir + "/.jj/"
 	initConfig()
 }
 

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/ASalimov/jbuilder/cmd"
+	"github.com/gocruncher/jenkins-job-ctl/cmd"
 )
 
 func main() {

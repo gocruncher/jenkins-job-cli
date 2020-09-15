@@ -1,4 +1,4 @@
-package jb
+package jj
 
 import (
 	"fmt"
@@ -27,11 +27,6 @@ func TestGetLastSuccessfulBuildDuration(t *testing.T) {
 	rsp, err := GetLastSuccessfulBuildInfo(getEnv("pi"), "config-deploy-manual")
 	assert.NoError(t, err)
 	fmt.Println("jd ", rsp)
-}
-
-func TestGetJobInfo(t *testing.T) {
-	ji := GetJobInfo(getEnv("pi"), "core-change-zone")
-	fmt.Printf("ji %+v", ji.GetParameterDefinitions())
 }
 
 func TestCancelJob(t *testing.T) {

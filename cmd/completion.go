@@ -109,7 +109,7 @@ https://itnext.io/upgrading-bash-on-macos-7138bd1066ba
 `, ver)
 		return
 	}
-	fmt.Println("Checked. After reloading your shell, jb autocompletion should be working.")
+	fmt.Println("Checked. After reloading your shell, jj autocompletion should be working.")
 }
 
 func checkZsh() {
@@ -130,16 +130,16 @@ func checkZsh() {
 		fmt.Println(
 			`
 Error: ~/.zshrc file was not found. As the next step, please create file and add the following line:
-  source <(jb completion zsh)`)
+  source <(jj completion zsh)`)
 		return
 	}
 	fmt.Println("==> file ~/.zshrc is exist - OK")
-	if !strings.Contains(buffer.String(), "jb completion zsh") {
+	if !strings.Contains(buffer.String(), "jj completion zsh") {
 		fmt.Println("==> completion script has not been added - FAILED")
 		fmt.Println(
 			`
-Error: ~/.zshrc should have line with jb completion script for the shell. Make sure, that the following line has been added the the ~/.zshrc file:
-    source <(jb completion zsh)`)
+Error: ~/.zshrc should have line with jj completion script for the shell. Make sure, that the following line has been added the the ~/.zshrc file:
+    source <(jj completion zsh)`)
 		return
 	}
 	fmt.Println("==> completion script has been added - OK")
@@ -152,7 +152,7 @@ Error: ~/.zshrc should have line with jb completion script for the shell. Make s
 	rsp, _ := ioutil.ReadAll(stderr)
 	if strings.Contains(string(rsp), "not found") {
 		compinitPos := strings.Index(buffer.String(), "autoload -Uz compinit")
-		scriptPos := strings.Index(buffer.String(), "jb completion zsh")
+		scriptPos := strings.Index(buffer.String(), "jj completion zsh")
 		if compinitPos > -1 && compinitPos > scriptPos {
 			fmt.Println("==> the initialized compdef script was added incorrectly - FAILED")
 			fmt.Println(
@@ -174,5 +174,5 @@ Error: current shell does not have required 'compdef' function. Add the followin
 	}
 	fmt.Println("==> compdef functions is exist - OK")
 
-	fmt.Println("Checked. After reloading your shell, jb autocompletion should be working.")
+	fmt.Println("Checked. After reloading your shell, jj autocompletion should be working.")
 }

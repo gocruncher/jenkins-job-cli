@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/ASalimov/jbuilder/cmd/jb"
+	"github.com/gocruncher/jenkins-job-ctl/cmd/jj"
 	"github.com/spf13/cobra"
 )
 
@@ -22,7 +22,7 @@ func init() {
 }
 
 func use(cmd *cobra.Command) {
-	jb.Init(cmd.Flags().Args()[0])
-	jb.SetDef(cmd.Flags().Args()[0])
+	jj.Init(cmd.Flags().Args()[0])
+	jj.SetDef(cmd.Flags().Args()[0])
 	fmt.Println(cmd.Flags().Args()[0] + " have been set by default")
 }

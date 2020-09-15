@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/ASalimov/jbuilder/cmd/jb"
+	"github.com/gocruncher/jenkins-job-ctl/cmd/jj"
 	"github.com/spf13/cobra"
 )
 
@@ -39,7 +39,7 @@ func set(args []string) {
 	} else {
 		name = args[0]
 	}
-	_, env := jb.GetEnv(name)
+	_, env := jj.GetEnv(name)
 	if URL == "" {
 		env.Url = getBaseAnswer("url: ", env.Url)
 	} else {
@@ -62,8 +62,8 @@ func set(args []string) {
 			}
 		}
 	}
-	env.Name = jb.EName(name)
-	env.Type = jb.EType(authtype)
+	env.Name = jj.EName(name)
+	env.Type = jj.EType(authtype)
 	if authtype == "a" {
 		if login == "" {
 			env.Login = getBaseAnswer("login: ", env.Login)
@@ -78,12 +78,12 @@ func set(args []string) {
 		}
 	}
 	fmt.Println("checking...")
-	err := jb.Check(env)
+	err := jj.Check(env)
 	if err != nil {
 		fmt.Println(err.Error())
 		fmt.Println("Failed to get access")
 		return
 	}
-	jb.SetEnv(env)
+	jj.SetEnv(env)
 	fmt.Println("Added")
 }

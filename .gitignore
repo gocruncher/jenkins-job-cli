@@ -5,6 +5,6 @@
 /vendor/
 /release/
 todo
-jbuilder
+jenkins-job-ctl
 /trush/
 /_build/

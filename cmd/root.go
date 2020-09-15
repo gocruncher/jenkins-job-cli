@@ -1,5 +1,5 @@
 /*
-Copyright © 2020 asalimov
+Copyright © 2020 gocruncher
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/ASalimov/jbuilder/cmd/jb"
+	"github.com/gocruncher/jenkins-job-ctl/cmd/jj"
 	"github.com/spf13/cobra"
 	"io"
 	"os"
@@ -27,46 +27,34 @@ import (
 )
 
 const (
-	bash_completion_func = `__jb_parse_get()
+	bash_completion_func = `__jj_parse_get()
 {
-    local jb_output out
+    local jj_output out
 
-	echo "will be run jb get compline --no-headers ${COMP_LINE} 2>/dev/null" >> /tmp/jblogs
-    if jb_output=$(jb get compline --no-headers "${COMP_LINE}" 2>/dev/null); then
-        out=($(echo "${jb_output}" | awk '{print $1}'))
+	if jj_output=$(jj get compline --no-headers "${COMP_LINE}" 2>/dev/null); then
+        out=($(echo "${jj_output}" | awk '{print $1}'))
         COMPREPLY=( $( compgen -W "${out[*]}" -- "$cur" ) )
     fi
 }
 
-__jb_get_env()
+__jj_get_env()
 {
     return 0
 }
 
-__jb_get_resource()
+__jj_get_resource()
 {
-    # if [[ ${#nouns[@]} -eq 0 ]]; then
-	#	echo "step3" >> /tmp/jblogs
-	#	echo "step3 ${#nouns[@]}" >> /tmp/jblogs
-    #    return 1
-    # fi
-	echo "step4 ${#nouns[@]} ${nouns[@]}" >> /tmp/jblogs
-	__jb_parse_get ${nouns[@]}
+	__jj_parse_get ${nouns[@]}
     if [[ $? -eq 0 ]]; then
         return 0
     fi
 }
 
-__jb_custom_func() {
-	echo "step00000" >> /tmp/jblogs
+__jj_custom_func() {
 
-	printenv >> /tmp/jblogs
-	echo "step00001" >> /tmp/jblogs
-	echo "step0 ${last_command} and ${flags_with_completion[@]}|${nouns[@]}|${cur}" >> /tmp/jblogs
-    case ${last_command} in
-        jb_get | jb_run | jb_delete | jb_stop)
-			echo "step2" >> /tmp/jblogs
-            __jb_get_resource
+	case ${last_command} in
+        jj_get | jj_run | jj_delete | jj_stop)
+            __jj_get_resource
             return
             ;;
         *)
@@ -96,19 +84,19 @@ const defaultBoilerPlate = `
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "jb",
-	Short: "jb - simple command line utility which just runs any jenkins job",
-	Long: `jbuilder is a simple command-line utility which just runs
+	Use:   "jj",
+	Short: "jj - simple command line utility which just runs any jenkins job",
+	Long: `jenkins-job-ctl(jj) is a simple command-line utility which just runs
 any Jenkins job. Before you start, please configure access to
-to the Jenkins service using "jb set" command. After that, you can 
+to the Jenkins service using "jj set" command. After that, you can 
 enable shell autocompletion for convenient work. To do this, run following:
    # for zsh completion:	
-   echo 'source <(jb completion zsh)' >>~/.zshrc
+   echo 'source <(jj completion zsh)' >>~/.zshrc
 
    # for bash completion:
-   echo 'source <(jb completion bash)' >>~/.bashrc
+   echo 'source <(jj completion bash)' >>~/.bashrc
 
-if this does not work for some reason, try calling "jb completion check" command that might help you to figure out what is wrong
+if this does not work for some reason, try calling "jj completion check" command that might help you to figure out what is wrong
 
 `,
 	//ValidArgs: []string{"run","get","set","del","completion"},
@@ -118,16 +106,16 @@ if this does not work for some reason, try calling "jb completion check" command
 	// has an action associated with it:
 	//	Run: func(cmd *cobra.Command, args []string) { },
 	Example: `  # Configure Access to the Jenkins
-  jb set dev-jenkins
+  jj set dev-jenkins
 
   # Start 'app-build' job in the current Jenkins
-  jb run app-build
+  jj run app-build
 
   # Start 'web-build' job in Jenkins named prod
-  jb run -n prod web-build
+  jj run -n prod web-build
 
   # makes a specific Jenkins name by default
-  jb use PROD  `,
+  jj use PROD  `,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -144,7 +132,7 @@ func getTime() int64 {
 }
 
 func runCompletionZsh(out io.Writer, boilerPlate string, root *cobra.Command) error {
-	zshHead := "#compdef jb\n"
+	zshHead := "#compdef jj\n"
 
 	out.Write([]byte(zshHead))
 
@@ -156,13 +144,13 @@ func runCompletionZsh(out io.Writer, boilerPlate string, root *cobra.Command) er
 	}
 
 	zshInitialization := `
-__jb_bash_source() {
+__jj_bash_source() {
 	alias shopt=':'
 	emulate -L sh
 	setopt kshglob noshglob braceexpand
 	source "$@"
 }
-__jb_type() {
+__jj_type() {
 	# -t is not supported by zsh
 	if [ "$1" == "-t" ]; then
 		shift
@@ -170,14 +158,14 @@ __jb_type() {
 		# "compopt +-o nospace" is used in the code to toggle trailing
 		# spaces. We don't support that, but leave trailing spaces on
 		# all the time
-		if [ "$1" = "__jb_compopt" ]; then
+		if [ "$1" = "__jj_compopt" ]; then
 			echo builtin
 			return 0
 		fi
 	fi
 	type "$@"
 }
-__jb_compgen() {
+__jj_compgen() {
 	local completions w
 	completions=( $(compgen "$@") ) || return $?
 	# filter by given word as prefix
@@ -194,10 +182,10 @@ __jb_compgen() {
 		fi
 	done
 }
-__jb_compopt() {
+__jj_compopt() {
 	true # don't do anything. Not supported by bashcompinit in zsh
 }
-__jb_ltrim_colon_completions()
+__jj_ltrim_colon_completions()
 {
 	if [[ "$1" == *:* && "$COMP_WORDBREAKS" == *:* ]]; then
 		# Remove colon-word prefix from COMPREPLY items
@@ -208,13 +196,13 @@ __jb_ltrim_colon_completions()
 		done
 	fi
 }
-__jb_get_comp_words_by_ref() {
+__jj_get_comp_words_by_ref() {
 	cur="${COMP_WORDS[COMP_CWORD]}"
 	prev="${COMP_WORDS[${COMP_CWORD}-1]}"
 	words=("${COMP_WORDS[@]}")
 	cword=("${COMP_CWORD[@]}")
 }
-__jb_filedir() {
+__jj_filedir() {
 	# Don't need to do anything here.
 	# Otherwise we will get trailing space without "compopt -o nospace"
 	true
@@ -227,20 +215,20 @@ if sed --help 2>&1 | grep -q 'GNU\|BusyBox'; then
 	LWORD='\<'
 	RWORD='\>'
 fi
-__jb_convert_bash_to_zsh() {
+__jj_convert_bash_to_zsh() {
 	sed \
 	-e 's/declare -F/whence -w/' \
 	-e 's/_get_comp_words_by_ref "\$@"/_get_comp_words_by_ref "\$*"/' \
 	-e 's/local \([a-zA-Z0-9_]*\)=/local \1; \1=/' \
 	-e 's/flags+=("\(--.*\)=")/flags+=("\1"); two_word_flags+=("\1")/' \
 	-e 's/must_have_one_flag+=("\(--.*\)=")/must_have_one_flag+=("\1")/' \
-	-e "s/${LWORD}_filedir${RWORD}/__jb_filedir/g" \
-	-e "s/${LWORD}_get_comp_words_by_ref${RWORD}/__jb_get_comp_words_by_ref/g" \
-	-e "s/${LWORD}__ltrim_colon_completions${RWORD}/__jb_ltrim_colon_completions/g" \
-	-e "s/${LWORD}compgen${RWORD}/__jb_compgen/g" \
-	-e "s/${LWORD}compopt${RWORD}/__jb_compopt/g" \
+	-e "s/${LWORD}_filedir${RWORD}/__jj_filedir/g" \
+	-e "s/${LWORD}_get_comp_words_by_ref${RWORD}/__jj_get_comp_words_by_ref/g" \
+	-e "s/${LWORD}__ltrim_colon_completions${RWORD}/__jj_ltrim_colon_completions/g" \
+	-e "s/${LWORD}compgen${RWORD}/__jj_compgen/g" \
+	-e "s/${LWORD}compopt${RWORD}/__jj_compopt/g" \
 	-e "s/${LWORD}declare${RWORD}/builtin declare/g" \
-	-e "s/\\\$(type${RWORD}/\$(__jb_type/g" \
+	-e "s/\\\$(type${RWORD}/\$(__jj_type/g" \
 	<<'BASH_COMPLETION_EOF'
 `
 	out.Write([]byte(zshInitialization))
@@ -252,18 +240,18 @@ __jb_convert_bash_to_zsh() {
 	zshTail := `
 BASH_COMPLETION_EOF
 }
-__jb_bash_source <(__jb_convert_bash_to_zsh)
+__jj_bash_source <(__jj_convert_bash_to_zsh)
 `
 	out.Write([]byte(zshTail))
 	return nil
 }
 
 func preRunE(cmd *cobra.Command, args []string) error {
-	if len(jb.GetEnvs()) == 0 {
-		return errors.New("There is no any jenkins settings. For this, use 'jb set NAME' command.")
+	if len(jj.GetEnvs()) == 0 {
+		return errors.New("There is no any jenkins settings. For this, use 'jj set NAME' command.")
 	}
-	err, _ := jb.GetEnv(ENV)
-	if err == jb.ErrNoEnv {
+	err, _ := jj.GetEnv(ENV)
+	if err == jj.ErrNoEnv {
 		return errors.New(fmt.Sprintf("Jenkins '%s' is not found", ENV))
 	}
 	return err

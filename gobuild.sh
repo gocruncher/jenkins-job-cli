@@ -3,7 +3,7 @@
 set -eux
 
 export GOPATH="$(pwd)/.gobuild"
-SRCDIR="${GOPATH}/src/github.com/ASalimov/jbuilder"
+SRCDIR="${GOPATH}/src/github.com/gocruncher/jenkins-job-ctl"
 
 [ -d ${GOPATH} ] && rm -rf ${GOPATH}
 mkdir -p ${GOPATH}/{src,pkg,bin}

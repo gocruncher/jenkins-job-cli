@@ -5,50 +5,47 @@ import (
 	"os"
 )
 
-func NewStdin() *jbStdin {
-	r:= jbStdin{}
+func NewStdin() *jjStdin {
+	r := jjStdin{}
 	go r.handle()
-	return  &r
+	return &r
 }
 
-type jbStdin struct {
+type jjStdin struct {
 	ch chan []byte
 }
 
-func (m *jbStdin) handle(){
+func (m *jjStdin) handle() {
 	p := make([]byte, 1)
 	for {
-		n, err:=os.Stdin.Read(p)
-		if err!=nil|| n==0{
+		n, err := os.Stdin.Read(p)
+		if err != nil || n == 0 {
 			return
 		}
-		m.ch<-p
+		m.ch <- p
 	}
 }
 
-func (m *jbStdin) NewListener(){
-	if m.ch!=nil{
+func (m *jjStdin) NewListener() {
+	if m.ch != nil {
 		close(m.ch)
 	}
 	m.ch = make(chan []byte)
 }
 
-func(m jbStdin) Close() error{
+func (m jjStdin) Close() error {
 	return nil
 }
 
-func (m jbStdin) Read(p[]byte)(n int, err error){
+func (m jjStdin) Read(p []byte) (n int, err error) {
 	select {
 	case b, ok := <-m.ch:
-		if !ok{
+		if !ok {
 			fmt.Printf("not ok")
-			return 0,nil
+			return 0, nil
 		}
 		p[0] = b[0]
 		return 1, nil
 	}
 
 }
-
-
-

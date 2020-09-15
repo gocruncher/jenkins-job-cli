@@ -3,9 +3,9 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"github.com/ASalimov/bar"
-	"github.com/ASalimov/jbuilder/cmd/jb"
 	"github.com/chzyer/readline"
+	"github.com/gocruncher/bar"
+	"github.com/gocruncher/jenkins-job-ctl/cmd/jj"
 	"github.com/spf13/cobra"
 	"github.com/ttacon/chalk"
 	"net/url"
@@ -53,7 +53,7 @@ type st struct {
 var curSt st
 var barMutex sync.Mutex
 var closeCh chan struct{}
-var stdinListener *jbStdin
+var stdinListener *jjStdin
 
 func init() {
 	var runCmd = &cobra.Command{
@@ -74,7 +74,7 @@ func init() {
 }
 
 func run_job(name string) {
-	env := jb.Init(ENV)
+	env := jj.Init(ENV)
 	time.Sleep(time.Millisecond * 200)
 	fmt.Printf("Job will be started in the %s environment\n", chalk.Underline.TextStyle(string(env.Name)))
 	time.Sleep(time.Millisecond * 200)
@@ -86,9 +86,9 @@ func run_job(name string) {
 
 	bar.InitTerminal()
 	data := map[string]string{}
-	err, jobInfo := jb.GetJobInfo(env, name)
+	err, jobInfo := jj.GetJobInfo(env, name)
 	if err != nil {
-		if err == jb.ErrNoJob {
+		if err == jj.ErrNoJob {
 			fmt.Printf("Error: job '%s' does not exist", name)
 			os.Exit(1)
 		}
@@ -160,7 +160,7 @@ func run_job(name string) {
 	for key, val := range data {
 		urlquery.Add(key, val)
 	}
-	err, queueId := jb.Build(env, name, urlquery.Encode())
+	err, queueId := jj.Build(env, name, urlquery.Encode())
 	check(err)
 
 	keyCh := make(chan string)
@@ -195,10 +195,10 @@ func check(err error) {
 	}
 }
 
-func waitForExecutor(env jb.Env, queueId int) int {
+func waitForExecutor(env jj.Env, queueId int) int {
 	informed := false
 	for {
-		err, queueInfo := jb.GetQueueInfo(env, queueId)
+		err, queueInfo := jj.GetQueueInfo(env, queueId)
 		if err != nil {
 			check(err)
 		}
@@ -283,9 +283,9 @@ func barHandler(jobUrl string, keyCh chan string, chMsg chan string, finishCh ch
 	}
 }
 
-func watchTheJob(env jb.Env, name string, number int, keyCh chan string) error {
+func watchTheJob(env jj.Env, name string, number int, keyCh chan string) error {
 	jobUrl := env.Url + "/job/" + name + "/" + strconv.Itoa(number) + "/console"
-	lastBuild, _ := jb.GetLastSuccessfulBuildInfo(env, name)
+	lastBuild, _ := jj.GetLastSuccessfulBuildInfo(env, name)
 	listenerStatus = true
 	defer func() {
 		listenerStatus = false
@@ -315,7 +315,7 @@ func watchTheJob(env jb.Env, name string, number int, keyCh chan string) error {
 	}
 
 	handle := func(cursor string, sleepTime int) string {
-		output, nextCursor, err := jb.Console(env, name, number, cursor)
+		output, nextCursor, err := jj.Console(env, name, number, cursor)
 		if err != nil || cursor == nextCursor {
 			return cursor
 		}
@@ -356,7 +356,7 @@ func watchTheJob(env jb.Env, name string, number int, keyCh chan string) error {
 	}
 
 	for {
-		curBuild, err := jb.GetBuildInfo(env, name, number)
+		curBuild, err := jj.GetBuildInfo(env, name, number)
 		if err != nil {
 			if getTime()-stime > int64(30*time.Millisecond) {
 				err := errors.New("failed")
@@ -413,7 +413,7 @@ func watchTheJob(env jb.Env, name string, number int, keyCh chan string) error {
 	}
 }
 
-func watchNext(env jb.Env, parentName string, childName string, parentJobID int, keyCh chan string) error {
+func watchNext(env jj.Env, parentName string, childName string, parentJobID int, keyCh chan string) error {
 	for i := 0; ; i++ {
 		bi, err := findDownstreamInBuilds(env, parentName, childName, parentJobID)
 		if err != nil {
@@ -437,14 +437,14 @@ func watchNext(env jb.Env, parentName string, childName string, parentJobID int,
 
 }
 
-func findDownstreamInBuilds(env jb.Env, parentName string, childName string, parent int) (*jb.BuildInfo, error) {
-	err, jobInfo := jb.GetJobInfo(env, childName)
+func findDownstreamInBuilds(env jj.Env, parentName string, childName string, parent int) (*jj.BuildInfo, error) {
+	err, jobInfo := jj.GetJobInfo(env, childName)
 	if err != nil {
 		check(err)
 	}
 	number := jobInfo.LastBuild.Number
 	for i := 5; i >= 0; i-- {
-		bi, err := jb.GetBuildInfo(env, childName, number-i)
+		bi, err := jj.GetBuildInfo(env, childName, number-i)
 		if err != nil {
 			continue
 		}
@@ -456,11 +456,11 @@ func findDownstreamInBuilds(env jb.Env, parentName string, childName string, par
 			}
 		}
 	}
-	return &jb.BuildInfo{}, errors.New("not found")
+	return &jj.BuildInfo{}, errors.New("not found")
 }
 
-func findDownstreamInQueue(env jb.Env, parentName string, childName string, parentJobID int) (int, error) {
-	queues := jb.GetQueues(env)
+func findDownstreamInQueue(env jj.Env, parentName string, childName string, parentJobID int) (int, error) {
+	queues := jj.GetQueues(env)
 	for _, queue := range queues.Items {
 		if queue.Task.Name == childName {
 			for _, action := range queue.Actions {
@@ -492,7 +492,7 @@ func listenKeys(out chan string) {
 
 }
 
-func listenInterrupt(env jb.Env) {
+func listenInterrupt(env jj.Env) {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {
@@ -516,11 +516,11 @@ func listenInterrupt(env jb.Env) {
 
 					if curSt.queue != 0 {
 						fmt.Println("canceling queue...")
-						jb.CancelQueue(env, curSt.queue)
+						jj.CancelQueue(env, curSt.queue)
 					}
 					if curSt.id != 0 {
 						fmt.Println("canceling job...")
-						status, err := jb.CancelJob(env, curSt.name, curSt.id)
+						status, err := jj.CancelJob(env, curSt.name, curSt.id)
 						if err != nil {
 							fmt.Printf("failed to cancel job, error %s", err)
 							os.Exit(0)
@@ -533,13 +533,13 @@ func listenInterrupt(env jb.Env) {
 						os.Exit(0)
 					}
 					if curSt.queue != 0 && curSt.id == 0 {
-						err, jobInfo := jb.GetJobInfo(env, curSt.name)
+						err, jobInfo := jj.GetJobInfo(env, curSt.name)
 						if err != nil {
 							check(err)
 						}
 						number := jobInfo.LastBuild.Number
 						for i := 0; i < 3; i++ {
-							bi, err := jb.GetBuildInfo(env, curSt.name, number-i)
+							bi, err := jj.GetBuildInfo(env, curSt.name, number-i)
 							if err != nil {
 								continue
 							}

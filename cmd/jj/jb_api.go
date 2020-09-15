@@ -26,7 +26,7 @@ func DelEnv(name EName) error {
 	for i, e := range config.Envs {
 		if e.Name == name {
 			config.Envs = append(config.Envs[:i], config.Envs[i+1:]...)
-			SetEnv(e)
+			SetConf()
 			return nil
 		}
 	}

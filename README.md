@@ -12,7 +12,7 @@ Fetch the [latest release](https://github.com/gocruncher/jenkins-job-cli/release
 #### Linux
 
 ```bash
-sudo wget https://github.com/gocruncher/jenkins-job-cli/releases/download/v1.0.1/jenkins-job-cli-1.0.1-linux-amd64 -O /usr/local/bin/jj
+sudo wget https://github.com/gocruncher/jenkins-job-cli/releases/download/v1.1.2/jenkins-job-cli-1.1.2-linux-amd64 -O /usr/local/bin/jj
 sudo chmod +x /usr/local/bin/jj
 ```
 
@@ -24,7 +24,7 @@ brew install jj
 ```
 #### OS X bash
 ```bash
-sudo curl -Lo /usr/local/bin/jj https://github.com/gocruncher/jenkins-job-cli/releases/download/v1.0.1/jenkins-job-cli-1.0.1-darwin-amd64
+sudo curl -Lo /usr/local/bin/jj https://github.com/gocruncher/jenkins-job-cli/releases/download/v1.1.2/jenkins-job-cli-1.1.2-darwin-amd64
 sudo chmod +x /usr/local/bin/jj
 ```
 

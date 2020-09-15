@@ -4,7 +4,6 @@
 ./cache
 /vendor/
 /release/
-todo
 jenkins-job-ctl
 /trush/
 /_build/

@@ -4,6 +4,7 @@ BUILD=$(shell git rev-parse --short HEAD)
 EXT_LD_FLAGS="-Wl,--allow-multiple-definition"
 LD_FLAGS="-w -X main.version=$(VERSION) -X main.build=$(BUILD) -extldflags=$(EXT_LD_FLAGS)"
 
+
 clean:
 	rm -rf _build/ release/
 

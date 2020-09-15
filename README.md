@@ -16,7 +16,7 @@ sudo wget https://github.com/gocruncher/jenkins-job-ctl/releases/download/v1.0.1
 sudo chmod +x /usr/local/bin/jj
 ```
 
-#### OS X brew
+#### OS X brew 
 
 ```bash
 brew tap gocruncher/tap

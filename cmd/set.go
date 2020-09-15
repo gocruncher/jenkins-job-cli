@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/gocruncher/jenkins-job-ctl/cmd/jj"
+	"github.com/gocruncher/jenkins-job-cli/cmd/jj"
 	"github.com/spf13/cobra"
 )
 

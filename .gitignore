@@ -4,6 +4,6 @@
 ./cache
 /vendor/
 /release/
-jenkins-job-ctl
+jenkins-job-cli
 /trush/
 /_build/

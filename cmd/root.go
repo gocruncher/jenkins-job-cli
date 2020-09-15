@@ -19,7 +19,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/gocruncher/jenkins-job-ctl/cmd/jj"
+	"github.com/gocruncher/jenkins-job-cli/cmd/jj"
 	"github.com/spf13/cobra"
 	"io"
 	"os"
@@ -86,7 +86,7 @@ const defaultBoilerPlate = `
 var rootCmd = &cobra.Command{
 	Use:   "jj",
 	Short: "jj - simple command line utility which just runs any jenkins job",
-	Long: `jenkins-job-ctl(jj) is a simple command-line utility which just runs
+	Long: `jenkins-job-cli(jj) is a simple command-line utility which just runs
 any Jenkins job. Before you start, please configure access to
 to the Jenkins service using "jj set" command. After that, you can 
 enable shell autocompletion for convenient work. To do this, run following:

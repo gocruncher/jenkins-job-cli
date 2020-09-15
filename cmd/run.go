@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/chzyer/readline"
 	"github.com/gocruncher/bar"
-	"github.com/gocruncher/jenkins-job-ctl/cmd/jj"
+	"github.com/gocruncher/jenkins-job-cli/cmd/jj"
 	"github.com/spf13/cobra"
 	"github.com/ttacon/chalk"
 	"net/url"

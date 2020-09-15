@@ -1,4 +1,4 @@
-module github.com/gocruncher/jenkins-job-ctl
+module github.com/gocruncher/jenkins-job-cli
 
 go 1.15
 

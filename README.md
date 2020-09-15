@@ -7,12 +7,12 @@ An execution will be like this:
 ![terminal demo](assets/demo.gif)
 
 ## Install
-Fetch the [latest release](https://github.com/gocruncher/jenkins-job-ctl/releases) for your platform:
+Fetch the [latest release](https://github.com/gocruncher/jenkins-job-cli/releases) for your platform:
 
 #### Linux
 
 ```bash
-sudo wget https://github.com/gocruncher/jenkins-job-ctl/releases/download/v1.0.1/jenkins-job-ctl-1.0.1-linux-amd64 -O /usr/local/bin/jj
+sudo wget https://github.com/gocruncher/jenkins-job-cli/releases/download/v1.0.1/jenkins-job-cli-1.0.1-linux-amd64 -O /usr/local/bin/jj
 sudo chmod +x /usr/local/bin/jj
 ```
 
@@ -24,7 +24,7 @@ brew install jj
 ```
 #### OS X bash
 ```bash
-sudo curl -Lo /usr/local/bin/jj https://github.com/gocruncher/jenkins-job-ctl/releases/download/v1.0.1/jenkins-job-ctl-1.0.1-darwin-amd64
+sudo curl -Lo /usr/local/bin/jj https://github.com/gocruncher/jenkins-job-cli/releases/download/v1.0.1/jenkins-job-cli-1.0.1-darwin-amd64
 sudo chmod +x /usr/local/bin/jj
 ```
 
@@ -93,4 +93,4 @@ jj use PROD
 - support of a terminal window resizing
 
 ## License
-`jenkins-job-ctl` is open-sourced software licensed under the [MIT](LICENSE) license.
+`jenkins-job-cli` is open-sourced software licensed under the [MIT](LICENSE) license.

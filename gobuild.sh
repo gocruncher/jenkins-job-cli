@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eux
 export GOPATH="$(pwd)/.gobuild"
-SRCDIR="${GOPATH}/src/github.com/gocruncher/jenkins-job-ctl"
+SRCDIR="${GOPATH}/src/github.com/gocruncher/jenkins-job-cli"
 
 [ -d ${GOPATH} ] && rm -rf ${GOPATH}
 mkdir -p ${GOPATH}/{src,pkg,bin}

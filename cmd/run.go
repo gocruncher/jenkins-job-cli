@@ -61,7 +61,7 @@ func init() {
 		Aliases: []string{"r"},
 		Short:   "Run the specified jenkins job",
 		Run: func(cmd *cobra.Command, args []string) {
-			run_job(args[0])
+			runJob(args[0])
 		},
 
 		Args:         cobra.ExactArgs(1),
@@ -73,7 +73,7 @@ func init() {
 	rootCmd.AddCommand(runCmd)
 }
 
-func run_job(name string) {
+func runJob(name string) {
 	env := jj.Init(ENV)
 	time.Sleep(time.Millisecond * 200)
 	fmt.Printf("Job will be started in the %s environment\n", chalk.Underline.TextStyle(string(env.Name)))
@@ -87,13 +87,10 @@ func run_job(name string) {
 	bar.InitTerminal()
 	data := map[string]string{}
 	err, jobInfo := jj.GetJobInfo(env, name)
-	if err != nil {
-		if err == jj.ErrNoJob {
-			fmt.Printf("Error: job '%s' does not exist", name)
-			os.Exit(1)
-		}
-		check(err)
+	if err == jj.ErrNoJob {
+		err = fmt.Errorf("job '%s' does not exist", name)
 	}
+	check(err)
 	params := jobInfo.GetParameterDefinitions()
 	if len(params) == 0 {
 		rl, err := readline.New("Press any key to continue: ")
@@ -188,20 +185,11 @@ func run_job(name string) {
 	return
 }
 
-func check(err error) {
-	if err != nil {
-		fmt.Printf("\nError: %s\n", err.Error())
-		os.Exit(1)
-	}
-}
-
 func waitForExecutor(env jj.Env, queueId int) int {
 	informed := false
 	for {
 		err, queueInfo := jj.GetQueueInfo(env, queueId)
-		if err != nil {
-			check(err)
-		}
+		check(err)
 		if !queueInfo.Blocked && queueInfo.Executable.URL != "" {
 			return queueInfo.Executable.Number
 		} else {
@@ -304,15 +292,22 @@ func watchTheJob(env jj.Env, name string, number int, keyCh chan string) error {
 	go barHandler(jobUrl, keyCh, chMsg, finishCh, &wg)
 	defer close(closeCh)
 	defer wg.Wait()
-	dotick := func() {
-		ctime := getTime()
-		dtime := ctime - stime
-		newTicks := int(float64(dtime) / float64(lastBuild.Duration) * 100)
-		for ticks < newTicks && ticks < 99 {
-			chMsg <- ""
-			ticks++
+	go func() {
+		for {
+			select {
+			case <-time.After(time.Millisecond * 100):
+				ctime := getTime()
+				dtime := ctime - stime
+				newTicks := int(float64(dtime) / float64(lastBuild.Duration) * 100)
+				for ticks < newTicks && ticks < 99 {
+					chMsg <- ""
+					ticks++
+				}
+			case <-closeCh:
+				return
+			}
 		}
-	}
+	}()
 
 	handle := func(cursor string, sleepTime int) string {
 		output, nextCursor, err := jj.Console(env, name, number, cursor)
@@ -343,7 +338,7 @@ func watchTheJob(env jj.Env, name string, number int, keyCh chan string) error {
 				if len(strings.TrimSpace(fline)) > 0 {
 					chMsg <- fline
 					time.Sleep(time.Duration(sleepTime) * time.Millisecond)
-					dotick()
+					//dotick()
 
 				}
 				j++
@@ -401,7 +396,7 @@ func watchTheJob(env jj.Env, name string, number int, keyCh chan string) error {
 		ncursor := handle(cursor, 100)
 		if ncursor != cursor {
 			cursor = ncursor
-			dotick()
+			//dotick()
 			ctime := getTime()
 			dtime := ctime - stime
 			if dtime < 10 {
@@ -434,14 +429,11 @@ func watchNext(env jj.Env, parentName string, childName string, parentJobID int,
 			return watchTheJob(env, childName, id, keyCh)
 		}
 	}
-
 }
 
 func findDownstreamInBuilds(env jj.Env, parentName string, childName string, parent int) (*jj.BuildInfo, error) {
 	err, jobInfo := jj.GetJobInfo(env, childName)
-	if err != nil {
-		check(err)
-	}
+	check(err)
 	number := jobInfo.LastBuild.Number
 	for i := 5; i >= 0; i-- {
 		bi, err := jj.GetBuildInfo(env, childName, number-i)
@@ -534,9 +526,7 @@ func listenInterrupt(env jj.Env) {
 					}
 					if curSt.queue != 0 && curSt.id == 0 {
 						err, jobInfo := jj.GetJobInfo(env, curSt.name)
-						if err != nil {
-							check(err)
-						}
+						check(err)
 						number := jobInfo.LastBuild.Number
 						for i := 0; i < 3; i++ {
 							bi, err := jj.GetBuildInfo(env, curSt.name, number-i)
@@ -555,13 +545,16 @@ func listenInterrupt(env jj.Env) {
 						}
 						fmt.Println("Canceled!!!")
 					}
-
 				}
 				os.Exit(0)
-
 			}
-
 		}
 	}()
+}
 
+func check(err error) {
+	if err != nil {
+		fmt.Printf("\nError: %s\n", err.Error())
+		os.Exit(1)
+	}
 }

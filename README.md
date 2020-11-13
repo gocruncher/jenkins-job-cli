@@ -1,4 +1,4 @@
-#  Runs Jenkins job from the Command Line 
+#  Easy way to run Jenkins job from the Command Line 
 <meta name="google-site-verification" content="Wl2WZRolJ6omFNTQRguTy0GRQU41taSDq20n4Qgz05c" />
 
 The utility starts a Jenkins build/job from the Command Line/Terminal.

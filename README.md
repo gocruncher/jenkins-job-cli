@@ -92,5 +92,8 @@ jj use PROD
 - add authorization by login/pass and through the RSA key
 - support of a terminal window resizing
 
+## Similar projects
+* [jcli](https://github.com/jenkins-zh/jenkins-cli/) was written by Golang which can manage multiple Jenkins
+
 ## License
 `jenkins-job-cli` is open-sourced software licensed under the [MIT](LICENSE) license.

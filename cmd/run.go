@@ -65,41 +65,26 @@ func init() {
 		},
 
 		Args:         cobra.ExactArgs(1),
-		PreRunE:      preRunE,
+		PreRunE:      runPreRunE,
 		SilenceUsage: false,
 	}
+	inputArgs = arguments{args: make([]string, 0, 20)}
+	runCmd.Flags().StringArrayVarP(&inputArgs.args, "arg", "a", []string{}, "input arguments of a job. Usage: -a key=val")
 	runCmd.Flags().StringVarP(&ENV, "name", "n", "", "current Jenkins name")
 	runCmd.SetUsageTemplate(usageTamplate)
 	rootCmd.AddCommand(runCmd)
 }
 
-func runJob(name string) {
-	env := jj.Init(ENV)
-	time.Sleep(time.Millisecond * 200)
-	fmt.Printf("Job will be started in the %s environment\n", chalk.Underline.TextStyle(string(env.Name)))
-	time.Sleep(time.Millisecond * 200)
-	if env.Url[len(env.Url)-1:] != "/" {
-		env.Url = env.Url + "/"
+func runPreRunE(cmd *cobra.Command, args []string) error {
+	err := inputArgs.validate()
+	if err != nil {
+		return err
 	}
-	fmt.Println("Link: ", env.Url+"job/"+name)
-	time.Sleep(time.Millisecond * 200)
+	return preRunE(cmd, args)
+}
 
-	bar.InitTerminal()
+func askParams(params []jj.ParameterDefinitions) map[string]string {
 	data := map[string]string{}
-	err, jobInfo := jj.GetJobInfo(env, name)
-	if err == jj.ErrNoJob {
-		err = fmt.Errorf("job '%s' does not exist", name)
-	}
-	check(err)
-	params := jobInfo.GetParameterDefinitions()
-	if len(params) == 0 {
-		rl, err := readline.New("Press any key to continue: ")
-		defer rl.Close()
-		_, err = rl.Readline()
-		if err != nil {
-			os.Exit(1)
-		}
-	}
 	for _, pd := range params {
 		cline := ""
 		defVal := pd.DefaultParameterValue.Value
@@ -151,6 +136,49 @@ func runJob(name string) {
 		}
 
 		data[pd.Name] = cline
+
+	}
+	return data
+}
+
+func runJob(name string) {
+	env := jj.Init(ENV)
+	time.Sleep(time.Millisecond * 200)
+	fmt.Printf("Job will be started in the %s environment\n", chalk.Underline.TextStyle(string(env.Name)))
+	time.Sleep(time.Millisecond * 200)
+	if env.Url[len(env.Url)-1:] != "/" {
+		env.Url = env.Url + "/"
+	}
+	fmt.Println("Link: ", env.Url+"job/"+name)
+	time.Sleep(time.Millisecond * 200)
+
+	bar.InitTerminal()
+	data := map[string]string{}
+	err, jobInfo := jj.GetJobInfo(env, name)
+	if err == jj.ErrNoJob {
+		err = fmt.Errorf("job '%s' does not exist", name)
+	}
+	check(err)
+	params := jobInfo.GetParameterDefinitions()
+	if len(params) == 0 {
+		rl, err := readline.New("Press any key to continue: ")
+		defer rl.Close()
+		_, err = rl.Readline()
+		if err != nil {
+			os.Exit(1)
+		}
+	}
+	if len(inputArgs.args) > 0 {
+		for _, pd := range params {
+			val, err := inputArgs.get(pd.Name)
+			if err != nil {
+				data[pd.Name] = pd.DefaultParameterValue.Value
+			} else {
+				data[pd.Name] = val
+			}
+		}
+	} else {
+		data = askParams(params)
 	}
 
 	urlquery := url.Values{}
